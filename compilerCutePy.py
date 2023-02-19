@@ -68,17 +68,29 @@ def lex():
 			if not char.isalnum():
 				state = final
 				flag = True
-				
 		elif state == 2:
 			if not char.isdigit():
 				state = final
 				flag = True
-
-
 		elif state == 3:
 			if char != '>' and char != '=':
 				flag = True
 			state = final
+		elif state == 4:
+			if char != "=":
+				flag = True
+			state = final
+				
+
+		if char.isspace():
+			del word[-1]
+			flag = False
+			if char == "\n":
+				line=line +1
+
+
+		'''
+
 		elif state == 4:
 			if char == "=":
 				print(word)
@@ -86,18 +98,18 @@ def lex():
 			break
 		elif state == 5:
 			state = final
+		
 		if char.isspace():
 			#del word[-1]
 			if char == "\n":
 				line=line +1
-	
+		'''
 	
 
 	if flag == True:
-		if len(word) > 1: 
-			del word[-1]
+		del word[-1]
 		file.seek(previus_pos)
-
+	
 	if state == final:
 			print(word)
 
@@ -112,7 +124,7 @@ def close_files():
 
 def main():
 	open_cpy_file()
-	for i in range(1,22):
+	for i in range(1,10):
 		lex()
 	close_files()
 
