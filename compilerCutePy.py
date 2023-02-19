@@ -1,6 +1,8 @@
 import sys
 ## GLOBAL DECLERATIONS ##
 temporary_states = {0,1,2,3,4,5,6}
+final = 99
+line = 1
 reserved_words_list = [
     'def', 
     'declare',
@@ -13,9 +15,6 @@ reserved_words_list = [
     'return',
     'input',
     'print']
-
-final = 99
-line = 1
 
 class Token:
     def __init__(self, category, value, line):
@@ -41,7 +40,7 @@ def lex():
 	word = []
 	state = 0
 	global line
-	flag = False
+	move_file_pointer = False
 	while state in temporary_states:
 		
 		previus_pos = file.tell()
@@ -49,9 +48,11 @@ def lex():
 		word.append(char)
 
 		if state == 0:
+			if char == "":
+				break
 			if char.isspace():
 				state = 0
-			if char.isalpha():
+			if char.isalpha() or char == "_":
 				state = 1
 			if char.isdigit():
 				state = 2
@@ -60,58 +61,41 @@ def lex():
 			if char == '>':
 				state = 4
 			if char == '#':
-				state = 6
-			if char in ('+', '-', '*', '/', '=', ',', ';', ':', '{', '}', '(', ')', '[', ']'):
+				state = 5
+			if char in ('+', '-', '*', '/', '=', ',', ';', ':', '{', '}', '(', ')', '[', ']','”'):
 				state = final #temp value
-		
 		elif state == 1:
-			if not char.isalnum():
+			if not char.isalnum() and char != "_":
 				state = final
-				flag = True
+				move_file_pointer = True
 		elif state == 2:
 			if not char.isdigit():
 				state = final
-				flag = True
+				move_file_pointer = True
 		elif state == 3:
-			if char != '>' and char != '=':
-				flag = True
+			if char not in ('>','='):
+				move_file_pointer = True
 			state = final
 		elif state == 4:
 			if char != "=":
-				flag = True
+				move_file_pointer = True
 			state = final
-				
-
+		elif state == 5:
+			if char not in ('{','}','$'):
+				move_file_pointer = True
+			state = final
 		if char.isspace():
 			del word[-1]
-			flag = False
+			move_file_pointer = False
 			if char == "\n":
 				line=line +1
-
-
-		'''
-
-		elif state == 4:
-			if char == "=":
-				print(word)
-			print(word)
-			break
-		elif state == 5:
-			state = final
-		
-		if char.isspace():
-			#del word[-1]
-			if char == "\n":
-				line=line +1
-		'''
-	
-
-	if flag == True:
+	if move_file_pointer == True:
 		del word[-1]
 		file.seek(previus_pos)
-	
 	if state == final:
 			print(word)
+	if char != "":
+		lex()
 
 
 
@@ -121,11 +105,9 @@ def lex():
 def close_files():
 	file.close()
 
-
 def main():
 	open_cpy_file()
-	for i in range(1,10):
-		lex()
+	lex()
 	close_files()
 
 
