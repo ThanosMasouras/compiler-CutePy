@@ -27,8 +27,8 @@ tokens_dict = {
     '<>': 'TOKEN_nonEqual',
     '<=' : 'TOKEN_lessEqual',
     '>=' : 'TOKEN_greaterEqual',
-    '(' : 'TOKEN_leftP',
-    ')' : 'TOKEN_rightP',
+    '(' : 'TOKEN_leftParenthesis',
+    ')' : 'TOKEN_rightParenthesis',
     '[' : 'TOKEN_leftBracket',
     ']' : 'TOKEN_rightBracket',
     '{' : 'TOKEN_leftBrace',
@@ -60,8 +60,8 @@ tokens_dict = {
 }
 
 class Token:
-    def __init__(self, category, value, line):
-        self.type = category
+    def __init__(self, family, value, line):
+        self.family = family
         self.value = value
         self.line = line
 
@@ -79,6 +79,11 @@ def open_cpy_file():
 		sys.exit()
 		
 	file = open(sys.argv[1], "r")
+
+def parser():
+	global token
+	lex()
+	start_rule()
 
 def lex():
 	word = []
@@ -144,27 +149,71 @@ def lex():
 	if state == final:
 			word = ''.join(word)
 			create_token(word,line)
-	if char != "":
-		lex()
+	#if char != "":
+	#	lex()
 
 
 
 def create_token(word,line):
-
+	global token
 	if word in tokens_dict.keys():
 		token = Token(tokens_dict[word], word, line)
 	elif word.isdigit():
 		token = Token(tokens_dict['number'], word, line)
 	else:
 		token = Token(tokens_dict['ID'], word, line)
-	print(' LINE: %d :: '  %token.line + token.type + ' :: ' + token.value)
+	print(' LINE: %d :: '  %token.line + token.family + ' :: ' + token.value)
+
+
+def start_rule():
+	def_main_part()
+	call_main_part()
+
+def def_main_part():
+	def_main_function()
+
+def def_main_function():
+	print("def_main_function")
+	if token.family == "TOKEN_def":
+		lex()
+		if token.family == "TOKEN_id":
+			lex()
+			if token.family == "TOKEN_leftParenthesis":
+				lex()
+				if token.family == "TOKEN_rightParenthesis":
+					lex()
+					if token.family == "TOKEN_colon":
+						lex()
+						if token.family == "TOKEN_left_hashbracket":
+							#declarations()
+							#def_function se loop
+							#statements()
+							print("done")
+						else:
+							print("left_hashbracket is missing")
+					else:
+						print("colon is missing")
+				else:
+					print("rightParenthesis is missng")
+			else:
+				print("leftparenthesis is missing")
+		else:
+			print("id is missing")
+	else:
+		print("def is missing")
+
+
+def call_main_part():
+	print("call_main_part")
+
+
 
 def close_files():
 	file.close()
 
 def main():
 	open_cpy_file()
-	lex()
+	parser()
 	close_files()
 
 
