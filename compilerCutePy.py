@@ -107,6 +107,8 @@ def lex():
 				state = 5
 			if char in ('+', '-', '*', '/', '=', ',', ';', ':', '{', '}', '(', ')', '[', ']','”'):
 				state = final #temp value
+			if char == '!':
+				state = 6
 		elif state == 1:
 			if not char.isalnum() and char != "_":
 				state = final
@@ -116,7 +118,7 @@ def lex():
 				state = final
 				move_file_pointer = True
 		elif state == 3:
-			if char not in ('>','='):
+			if char != '=':
 				move_file_pointer = True
 			state = final
 		elif state == 4:
@@ -125,6 +127,10 @@ def lex():
 			state = final
 		elif state == 5:
 			if char not in ('{','}','$'):
+				move_file_pointer = True
+			state = final
+		elif state == 6:
+			if char != "=":
 				move_file_pointer = True
 			state = final
 		if char.isspace():

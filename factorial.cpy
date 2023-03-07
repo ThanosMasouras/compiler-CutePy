@@ -17,3 +17,6 @@ def main_factorial():
 	print(fact);
 #}
 
+if __name__ == ”__main__”:
+	#$ call of main functions #$
+	main_factorial();
