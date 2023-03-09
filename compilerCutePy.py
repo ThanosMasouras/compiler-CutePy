@@ -173,7 +173,6 @@ def def_main_part():
 	def_main_function()
 
 def def_main_function():
-	print("def_main_function")
 	if token.family == "TOKEN_def":
 		lex()
 		if token.family == "TOKEN_id":
@@ -185,10 +184,14 @@ def def_main_function():
 					if token.family == "TOKEN_colon":
 						lex()
 						if token.family == "TOKEN_left_hashbracket":
-							#declarations()
-							#def_function se loop
-							#statements()
-							print("done")
+							lex()
+							declarations()
+							def_function()
+							statements()
+							if token.family == "TOKEN_rigth_hashbracket":
+								lex()
+							else:
+								print("right_hashbracket is missing")
 						else:
 							print("left_hashbracket is missing")
 					else:
@@ -201,6 +204,137 @@ def def_main_function():
 			print("id is missing")
 	else:
 		print("def is missing")
+
+
+def declarations():
+	while(token.family == "TOKEN_hashtag"):
+		lex()
+		if token.family == "TOKEN_declare":
+			lex()
+			declaration_line()
+
+def declaration_line():
+	if token.family == "TOKEN_id":
+		lex()
+		id_list()
+
+def def_function():
+	while(token.family == "TOKEN_def"):
+		lex()
+		if token.family == "TOKEN_id":
+			lex()
+			if token.family == "TOKEN_leftParenthesis":
+				lex()
+				if token.family == "TOKEN_id":
+					lex()
+					id_list()
+					if token.family == "TOKEN_rightParenthesis":
+						lex()
+						if token.family == "TOKEN_colon":
+							lex()
+							if token.family == "TOKEN_left_hashbracket":
+								lex()
+								declarations()
+								def_function()
+								statements()
+								if token.family == "TOKEN_rigth_hashbracket":
+									lex()
+								else:
+									print("right_hashbracket is missing")
+							else:
+								print("TOKEN_left_hashbracket is missing")
+						else:
+							print("colon is missing")
+					else:
+						print("TOKEN_rightParenthesis is missing")
+				else:
+					print("id is missing")
+			else:
+				print("leftparenthesis is missing")
+		else:
+			print("TOKEN_id is missing")
+
+
+def statements():
+	if token.family in ('TOKEN_id', 'TOKEN_print', 'TOKEN_return', 'TOKEN_if', 'TOKEN_while'):
+		statement()
+
+def statement():
+	if token.family in ('TOKEN_id', 'TOKEN_print', 'TOKEN_return'):
+		simple_statement()
+	elif token.family in ("TOKEN_if", "TOKEN_while"):
+		structured_statement()
+
+def simple_statement():
+	if token.family == 'TOKEN_id':
+		assignment_stat()
+	elif token.family == 'TOKEN_print':
+		print('print_stat()')
+	elif token.family == 'TOKEN_return':
+		print('return_stat()')
+
+def structured_statement():
+	if token.family == 'TOKEN_if':
+		print('if_stat()')
+	elif token.family == 'TOKEN_while':
+		print('while_stat()')
+
+def assignment_stat():
+	lex()
+	if token.family == "TOKEN_equal":
+		lex()
+		if token.value == "int":
+			lex()
+			if token.family == "TOKEN_leftParenthesis":
+				lex()
+				if token.family == "TOKEN_input":
+					lex()
+					if token.family == "TOKEN_leftParenthesis":
+						lex()
+						if token.family == "TOKEN_rightParenthesis":
+							lex()
+							if token.family == "TOKEN_rightParenthesis":
+								lex()
+								if token.family == "TOKEN_semiColon":
+									lex()
+							else:
+								print("TOKEN_rightParenthesis is missing")
+						else:
+							print("TOKEN_rightParenthesis is missing")
+					else:
+						print("TOKEN_leftParenthesis is missing")
+				else:
+					print("TOKEN_input is missing")
+			else:
+				print("TOKEN_leftParenthesis is missing")
+		else:
+			expression()
+			if token.family == "TOKEN_semiColon":
+				lex()
+
+
+
+def expression():
+	optional_sign()
+	term()
+
+def optional_sign():
+	if token.value == "+":
+		lex()
+
+def term():
+	print("term")
+
+
+def structured_statement():
+	print("structured_statement")
+
+def id_list():
+	while(token.family == "TOKEN_comma"):
+		lex()
+		if token.family == "TOKEN_id":
+			lex()
+
 
 
 def call_main_part():
