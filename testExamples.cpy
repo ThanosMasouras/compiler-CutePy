@@ -2,8 +2,8 @@ def main_factorial():
 #{
     #declare x
 
-    
-    x = int(input());
+    fact = fact*i
+    x = 5*1;
     fact = 1;
     a>bc;
     while(i>=x):

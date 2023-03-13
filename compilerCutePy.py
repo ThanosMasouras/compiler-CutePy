@@ -260,6 +260,7 @@ def statements():
 		statement()
 
 def statement():
+	print("inside statement")
 	if token.family in ('TOKEN_id', 'TOKEN_print', 'TOKEN_return'):
 		simple_statement()
 	elif token.family in ("TOKEN_if", "TOKEN_while"):
@@ -279,6 +280,8 @@ def structured_statement():
 	elif token.family == 'TOKEN_while':
 		print('while_stat()')
 
+
+
 def assignment_stat():
 	lex()
 	if token.family == "TOKEN_equal":
@@ -297,6 +300,8 @@ def assignment_stat():
 								lex()
 								if token.family == "TOKEN_semiColon":
 									lex()
+								else:
+									print("TOKEN_semiColon is missing")
 							else:
 								print("TOKEN_rightParenthesis is missing")
 						else:
@@ -311,19 +316,52 @@ def assignment_stat():
 			expression()
 			if token.family == "TOKEN_semiColon":
 				lex()
+			else:
+				print("TOKEN_semiColon is missing")
 
 
 
 def expression():
+	print("inside expression")
 	optional_sign()
 	term()
+	while(token.value == "+"):
+		lex()
+		expression()
 
 def optional_sign():
 	if token.value == "+":
 		lex()
 
 def term():
-	print("term")
+	factor()
+	while(token.value == "*"):
+		lex()
+		term()
+
+def factor():
+	if token.family == "TOKEN_number":
+		lex()
+	elif token.family == "TOKEN_leftParenthesis":
+		lex()
+		expression()
+		if token.family == "TOKEN_rightParenthesis":
+			lex()
+	elif token.family == "TOKEN_id":
+		lex()
+		idtail()
+
+def idtail():
+	if token.family == "TOKEN_leftParenthesis":
+		lex()
+		actual_par_list()
+		if token.family == "TOKEN_rightParenthesis":
+			lex()
+def actual_par_list():
+	expression()
+	while(token.family == "TOKEN_comma"):
+		lex()
+		expression()
 
 
 def structured_statement():
