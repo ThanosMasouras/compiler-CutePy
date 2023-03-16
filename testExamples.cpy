@@ -1,6 +1,8 @@
 def main_factorial():
 #{
-    #declare x
+    #$ declare x fskfhsdfksdhfsdfh
+    fsdfsdjhfjsdfhsdjfhsdf
+    dfdfdf#$
 
     fact = fact*i
     x = 5*1;

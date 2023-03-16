@@ -1,8 +1,9 @@
 import sys
 ## GLOBAL DECLERATIONS ##
-temporary_states = {0,1,2,3,4,5,6}
+temporary_states = {0,1,2,3,4,5,6,7,8}
 final = 99
 line = 1
+skip_char = 0
 reserved_words_list = [
     'def', 
     'declare',
@@ -89,6 +90,7 @@ def lex():
 	word = []
 	state = 0
 	global line
+	global skip_char
 	move_file_pointer = False
 	while state in temporary_states:
 		previus_pos = file.tell()
@@ -97,6 +99,7 @@ def lex():
 
 		if state == 0:
 			if char == "":
+				create_token("EOF",line)
 				break
 			if char.isspace():
 				state = 0
@@ -134,10 +137,19 @@ def lex():
 			if char not in ('{','}','$'):
 				move_file_pointer = True
 			state = final
+			if char == '$':
+				state = 7
 		elif state == 6:
 			if char != "=":
 				move_file_pointer = True
 			state = final
+		elif state == 7:
+			if char == "#":
+				state = 8
+		elif state == 8:
+			if char == "$":
+				state = 0
+				del word[:]
 		if char.isspace():
 			del word[-1]
 			move_file_pointer = False
@@ -146,11 +158,9 @@ def lex():
 	if move_file_pointer == True:
 		del word[-1]
 		file.seek(previus_pos)
-	if state == final:
+	if state == final :
 			word = ''.join(word)
 			create_token(word,line)
-	#if char != "":
-	#	lex()
 
 
 
