@@ -1,5 +1,10 @@
 import sys
 ## GLOBAL DECLERATIONS ##
+
+
+# 1. na kanw tin anadromi
+# 2. na kanw function gia ta error
+# 3. na balw kapoia break, logo anadromis
 temporary_states = {0,1,2,3,4,5,6,7,8}
 final = 99
 line = 1
@@ -25,7 +30,7 @@ tokens_dict = {
     '<' : 'TOKEN_less',
     '>' : 'TOKEN_greater',
     '=' : 'TOKEN_equal',
-    '<>': 'TOKEN_nonEqual',
+    '!=': 'TOKEN_nonEqual',
     '<=' : 'TOKEN_lessEqual',
     '>=' : 'TOKEN_greaterEqual',
     '(' : 'TOKEN_leftParenthesis',
@@ -118,7 +123,7 @@ def lex():
 			if char == '!':
 				state = 6
 		elif state == 1:
-			if not char.isalnum() and char != "_":
+			if not char.isalnum() and char != "_" and char != '"':
 				state = final
 				move_file_pointer = True
 		elif state == 2:
@@ -266,7 +271,7 @@ def def_function():
 
 
 def statements():
-	if token.family in ('TOKEN_id', 'TOKEN_print', 'TOKEN_return', 'TOKEN_if', 'TOKEN_while'):
+	while( token.family in ('TOKEN_id', 'TOKEN_print', 'TOKEN_return', 'TOKEN_if', 'TOKEN_while')):
 		statement()
 
 def statement():
@@ -280,15 +285,15 @@ def simple_statement():
 	if token.family == 'TOKEN_id':
 		assignment_stat()
 	elif token.family == 'TOKEN_print':
-		print('print_stat()')
+		print_stat()
 	elif token.family == 'TOKEN_return':
-		print('return_stat()')
+		return_stat()
 
 def structured_statement():
 	if token.family == 'TOKEN_if':
-		print('if_stat()')
+		if_stat()
 	elif token.family == 'TOKEN_while':
-		print('while_stat()')
+		while_stat()
 
 
 
@@ -328,6 +333,123 @@ def assignment_stat():
 				lex()
 			else:
 				print("TOKEN_semiColon is missing")
+
+
+def print_stat():
+		lex()
+		if token.family == "TOKEN_leftParenthesis":
+			lex()
+			expression()
+			if token.family == "TOKEN_rightParenthesis":
+				lex()
+				if token.family == "TOKEN_semiColon":
+					lex()
+				else:
+					print("TOKEN_colon is missing")
+			else:
+				print("TOKEN_rightParenthesis is missing")
+		else:
+			print("TOKEN_leftParenthesis is missing")
+	
+def return_stat():
+		lex()
+		if token.family == "TOKEN_leftParenthesis":
+			lex()
+			expression()
+			if token.family == "TOKEN_rightParenthesis":
+				lex()
+				if token.family == "TOKEN_semiColon":
+					lex()
+				else:
+					print("TOKEN_colon is missing")
+			else:
+				print("TOKEN_rightParenthesis is missing")
+		else:
+			print("TOKEN_leftParenthesis is missing")
+	
+
+def if_stat():
+	lex()
+	if token.family == "TOKEN_leftParenthesis":
+		lex()
+		condition()
+		if token.family == "TOKEN_rightParenthesis":
+			lex()
+			if token.family == "TOKEN_colon":
+				lex()
+				if token.family == "TOKEN_left_hashbracket":
+					lex()
+					statements()
+					if token.family == "TOKEN_right_hashbracket":
+						lex()	
+					else:
+						print("TOKEN_right_hashbracket is missing")
+				else:
+					statement()
+
+		if token.family =="TOKEN_else":
+			lex()
+			if token.family =="TOKEN_colon":
+				lex()
+				if token.family =="TOKEN_left_hashbracket":
+					lex()
+					statements()
+					if token.family == "TOKEN_right_hashbracket":
+						lex()
+				else:
+					statement()
+
+
+def while_stat():
+	lex()
+	if token.family == "TOKEN_leftParenthesis":
+		lex()
+		condition()
+		if token.family == "TOKEN_rightParenthesis":
+			lex()
+			if token.family == "TOKEN_colon":
+				lex()
+				if token.family == "TOKEN_left_hashbracket":
+					lex()
+					statements()
+					if token.family == "TOKEN_right_hashbracket":
+						lex()	
+					else:
+						print("TOKEN_right_hashbracket is missing")
+				else:
+					statement()
+
+def condition():
+	print("inside condition")
+	bool_term()
+	while(token.value == 'or'):
+		lex()
+		bool_term()
+
+def bool_term():
+	bool_factor()
+	while(token.value == 'and'):
+		lex()
+		bool_factor()
+
+def bool_factor():
+	if token.value == "not":
+		lex()
+		if token.family == 'TOKEN_leftBracket':
+			condition()
+			lex()
+			if token.family == 'TOKEN_rightBracket':
+				lex()
+	elif token.family == 'TOKEN_leftBracket':
+			condition()
+			lex()
+			if token.family == 'TOKEN_rightBracket':
+				lex()
+	else:
+		expression()
+		if token.value in ['==','<','>','!=','<=','>=']:
+			lex()
+			expression()
 
 
 
@@ -374,8 +496,7 @@ def actual_par_list():
 		expression()
 
 
-def structured_statement():
-	print("structured_statement")
+
 
 def id_list():
 	while(token.family == "TOKEN_comma"):
@@ -385,9 +506,33 @@ def id_list():
 
 
 
+
 def call_main_part():
 	print("call_main_part")
+	if token.family == "TOKEN_if":
+		lex()
+		if token.value == '__name__':
+			lex()
+			if token.family == "TOKEN_equal":
+				lex()
+				if token.family == "TOKEN_equal":
+					lex()
+					if token.value == '"__main__"':
+						lex()
+						if token.family == 'TOKEN_colon':
+							lex()
+							while(token.family == "TOKEN_id"):
+								main_function_call()
 
+
+def main_function_call():
+	lex()
+	if token.family == "TOKEN_leftParenthesis":
+		lex()
+		if token.family == "TOKEN_rightParenthesis":
+			lex()
+			if token.family == "TOKEN_semiColon":
+				lex()
 
 
 def close_files():
