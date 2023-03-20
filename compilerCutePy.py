@@ -87,6 +87,11 @@ def open_cpy_file():
 		
 	file = open(sys.argv[1], "r")
 
+
+def error(line, missing_token):
+    print(f"Error: line {line} - {missing_token} is missing")
+    exit()
+
 def parser():
 	global token
 	lex()
@@ -221,19 +226,19 @@ def def_main_function():
 							if token.family == "TOKEN_right_hashbracket":
 								lex()
 							else:
-								print("def_main_function right_hashbracket is missing")
+								error(token.line, "#}")
 						else:
-							print("left_hashbracket is missing")
+							error(token.line, "#{")
 					else:
-						print("colon is missing")
+						error(token.line, ":")
 				else:
-					print("rightParenthesis is missng")
+					error(token.line, ")")
 			else:
-				print("leftparenthesis is missing")
+				error(token.line, "(")
 		else:
-			print("id is missing")
+			error(token.line, "id")
 	else:
-		print("def is missing")
+		error(token.line, "def")
 
 
 def declarations():
@@ -242,6 +247,8 @@ def declarations():
 		if token.family == "TOKEN_declare":
 			lex()
 			declaration_line()
+		else:
+			error(token.line, "declare")
 
 def declaration_line():
 	if token.family == "TOKEN_id":
@@ -270,19 +277,19 @@ def def_function():
 								if token.family == "TOKEN_right_hashbracket":
 									lex()
 								else:
-									print("def function right_hashbracket is missing")
+									error(token.line,"#}")
 							else:
-								print("TOKEN_left_hashbracket is missing")
+								error(token.line,"#{")
 						else:
-							print("colon is missing")
+							error(token.line,":")
 					else:
-						print("TOKEN_rightParenthesis is missing")
+						error(token.line,")")
 				else:
-					print("id is missing")
+					error(token.line,"id")
 			else:
-				print("leftparenthesis is missing")
+				error(token.line,"(")
 		else:
-			print("TOKEN_id is missing")
+			error(token.line,"id")
 
 
 def statements():
@@ -330,23 +337,23 @@ def assignment_stat():
 								if token.family == "TOKEN_semiColon":
 									lex()
 								else:
-									print("TOKEN_semiColon is missing")
+									error(token.line,";")
 							else:
-								print("TOKEN_rightParenthesis is missing")
+								error(token.line,")")
 						else:
-							print("TOKEN_rightParenthesis is missing")
+							error(token.line,")")
 					else:
-						print("TOKEN_leftParenthesis is missing")
+						error(token.line,"(")
 				else:
-					print("TOKEN_input is missing")
+					error(token.line,"iput")
 			else:
-				print("TOKEN_leftParenthesis is missing")
+				error(token.line,"(")
 		else:
 			expression()
 			if token.family == "TOKEN_semiColon":
 				lex()
 			else:
-				print("TOKEN_semiColon is missing")
+				error(token.line,";")
 
 
 def print_stat():
@@ -359,11 +366,11 @@ def print_stat():
 				if token.family == "TOKEN_semiColon":
 					lex()
 				else:
-					print("TOKEN_colon is missing")
+					error(token.line,":")
 			else:
-				print("TOKEN_rightParenthesis is missing")
+				error(token.line,")")
 		else:
-			print("TOKEN_leftParenthesis is missing")
+			error(token.line,"(")
 	
 def return_stat():
 		lex()
@@ -375,11 +382,11 @@ def return_stat():
 				if token.family == "TOKEN_semiColon":
 					lex()
 				else:
-					print("TOKEN_colon is missing")
+					error(token.line,";")
 			else:
-				print("TOKEN_rightParenthesis is missing")
+				error(token.line,"dd)")
 		else:
-			print("TOKEN_leftParenthesis is missing")
+			error(token.line,"(")
 	
 
 def if_stat():
@@ -397,9 +404,13 @@ def if_stat():
 					if token.family == "TOKEN_right_hashbracket":
 						lex()	
 					else:
-						print("TOKEN_right_hashbracket is missing")
+						error(token.line,"#}")
 				else:
 					statement()
+			else:
+				error(token.line,":")
+		else:
+			error(token.line,")")
 
 		if token.family =="TOKEN_else":
 			lex()
@@ -410,9 +421,12 @@ def if_stat():
 					statements()
 					if token.family == "TOKEN_right_hashbracket":
 						lex()
+					else:
+						error(token.line,"#}")
 				else:
 					statement()
-
+			else:
+				error(token.line,":")
 
 def while_stat():
 	lex()
@@ -429,9 +443,15 @@ def while_stat():
 					if token.family == "TOKEN_right_hashbracket":
 						lex()	
 					else:
-						print("INSIDE WHILE TOKEN_right_hashbracket is missing")
+						error(token.line,"#}")
 				else:
 					statement()
+			else:
+				error(token.line,":")
+		else:
+			error(token.line,")")
+	else:
+		error(token.line,"(")
 
 def condition():
 	bool_term()
