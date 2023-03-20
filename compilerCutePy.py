@@ -5,7 +5,7 @@ import sys
 # 1. na kanw tin anadromi
 # 2. na kanw function gia ta error
 # 3. na balw kapoia break, logo anadromis
-temporary_states = {0,1,2,3,4,5,6,7,8}
+temporary_states = {0,1,2,3,4,5,6,7,8,9,10}
 final = 99
 line = 1
 skip_char = 0
@@ -26,10 +26,11 @@ tokens_dict = {
     '+' : 'TOKEN_plus',
     '-' : 'TOKEN_minus',
     '*' : 'TOKEN_times',
-    '/' : 'TOKEN_slash',
+    '//' : 'TOKEN_divide',
     '<' : 'TOKEN_less',
     '>' : 'TOKEN_greater',
-    '=' : 'TOKEN_equal',
+    '=' : 'TOKEN_assignment',
+    '==': 'TOKEN_equal',
     '!=': 'TOKEN_nonEqual',
     '<=' : 'TOKEN_lessEqual',
     '>=' : 'TOKEN_greaterEqual',
@@ -61,7 +62,7 @@ tokens_dict = {
     '.' : 'TOKEN_dot',
     '#$' : 'TOKEN_comment',
     '#{' : 'TOKEN_left_hashbracket',
-    '#}' : 'TOKEN_rigth_hashbracket',
+    '#}' : 'TOKEN_right_hashbracket',
     '#' : 'TOKEN_hashtag'
 }
 
@@ -118,12 +119,16 @@ def lex():
 				state = 4
 			if char == '#':
 				state = 5
-			if char in ('+', '-', '*', '/', '=', ',', ';', ':', '{', '}', '(', ')', '[', ']','”'):
+			if char in ('+', '-', '*', ',', ';', ':', '{', '}', '(', ')', '[', ']'):
 				state = final #temp value
 			if char == '!':
 				state = 6
+			if char == '/':
+				state = 9
+			if char == '=':
+				state = 10
 		elif state == 1:
-			if not char.isalnum() and char != "_" and char != '"':
+			if not char.isalnum() and char != "_" and char != '"' and char != "”":
 				state = final
 				move_file_pointer = True
 		elif state == 2:
@@ -155,6 +160,14 @@ def lex():
 			if char == "$":
 				state = 0
 				del word[:]
+		elif state == 9:
+			if char != "/":
+				move_file_pointer = True
+			state = final
+		elif state == 10:
+			if char != "=":
+				move_file_pointer = True
+			state = final
 		if char.isspace():
 			del word[-1]
 			move_file_pointer = False
@@ -185,7 +198,9 @@ def start_rule():
 	call_main_part()
 
 def def_main_part():
-	def_main_function()
+	while( token.family == "TOKEN_def"):
+		def_main_function()
+	
 
 def def_main_function():
 	if token.family == "TOKEN_def":
@@ -203,10 +218,10 @@ def def_main_function():
 							declarations()
 							def_function()
 							statements()
-							if token.family == "TOKEN_rigth_hashbracket":
+							if token.family == "TOKEN_right_hashbracket":
 								lex()
 							else:
-								print("right_hashbracket is missing")
+								print("def_main_function right_hashbracket is missing")
 						else:
 							print("left_hashbracket is missing")
 					else:
@@ -252,10 +267,10 @@ def def_function():
 								declarations()
 								def_function()
 								statements()
-								if token.family == "TOKEN_rigth_hashbracket":
+								if token.family == "TOKEN_right_hashbracket":
 									lex()
 								else:
-									print("right_hashbracket is missing")
+									print("def function right_hashbracket is missing")
 							else:
 								print("TOKEN_left_hashbracket is missing")
 						else:
@@ -275,7 +290,6 @@ def statements():
 		statement()
 
 def statement():
-	print("inside statement")
 	if token.family in ('TOKEN_id', 'TOKEN_print', 'TOKEN_return'):
 		simple_statement()
 	elif token.family in ("TOKEN_if", "TOKEN_while"):
@@ -299,7 +313,7 @@ def structured_statement():
 
 def assignment_stat():
 	lex()
-	if token.family == "TOKEN_equal":
+	if token.family == "TOKEN_assignment":
 		lex()
 		if token.value == "int":
 			lex()
@@ -415,12 +429,11 @@ def while_stat():
 					if token.family == "TOKEN_right_hashbracket":
 						lex()	
 					else:
-						print("TOKEN_right_hashbracket is missing")
+						print("INSIDE WHILE TOKEN_right_hashbracket is missing")
 				else:
 					statement()
 
 def condition():
-	print("inside condition")
 	bool_term()
 	while(token.value == 'or'):
 		lex()
@@ -454,10 +467,9 @@ def bool_factor():
 
 
 def expression():
-	print("inside expression")
 	optional_sign()
 	term()
-	while(token.value == "+"):
+	while(token.value == "+" or token.value == "-"):
 		lex()
 		expression()
 
@@ -467,11 +479,12 @@ def optional_sign():
 
 def term():
 	factor()
-	while(token.value == "*"):
+	while(token.value == "*" or token.value == '//'):
 		lex()
 		term()
 
 def factor():
+
 	if token.family == "TOKEN_number":
 		lex()
 	elif token.family == "TOKEN_leftParenthesis":
@@ -508,21 +521,18 @@ def id_list():
 
 
 def call_main_part():
-	print("call_main_part")
 	if token.family == "TOKEN_if":
 		lex()
 		if token.value == '__name__':
 			lex()
 			if token.family == "TOKEN_equal":
 				lex()
-				if token.family == "TOKEN_equal":
+				if token.value == '”__main__”':
 					lex()
-					if token.value == '"__main__"':
+					if token.family == 'TOKEN_colon':
 						lex()
-						if token.family == 'TOKEN_colon':
-							lex()
-							while(token.family == "TOKEN_id"):
-								main_function_call()
+						while(token.family == "TOKEN_id"):
+							main_function_call()
 
 
 def main_function_call():

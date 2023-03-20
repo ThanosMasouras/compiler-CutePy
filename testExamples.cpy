@@ -3,6 +3,7 @@ def main_factorial():
     #$ declare x fskfhsdfksdhfsdfh
     fsdfsdjhfjsdfhsdjfhsdf
     dfdfdf#$
+    x=x//1;
     if(x<(5+1)):
         x=5;
     else:
@@ -14,6 +15,14 @@ def main_factorial():
     fact = 1;
     a=bc;
     print(fact);
+#}
+
+
+def main_fibonacci():
+#{
+    
+    #declare x
+    x=1;   
 #}
 
 
