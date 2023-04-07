@@ -9,6 +9,8 @@ temporary_states = {0,1,2,3,4,5,6,7,8,9,10}
 final = 99
 line = 1
 skip_char = 0
+next_label = 0
+quad_list = []
 reserved_words_list = [
     'def', 
     'declare',
@@ -75,6 +77,37 @@ class Token:
     def get_token_type(self):
         return self.token_type
 
+class Quad():
+	def __init__(self, id, op, x, y, z):
+		self.id = id
+		self.op = op
+		self.x = x
+		self.y = y
+		self.z = z
+
+def gen_quad(id, op, x, y, z):
+	global next_label
+	next_label +=1
+	quad_list.append(Quad(id, op, x, y, z))
+
+def next_quad():
+	return next_label
+
+def empty_list():
+    return list()
+
+
+def make_list(label):
+    newlist = list()
+    newlist.append(label)
+    return newlist
+
+
+def merge(list1, list2):
+    return list1 + list2
+
+#backpatch
+#newTemp()
 def open_cpy_file():
 	global file
 
