@@ -1,10 +1,15 @@
 import sys
 ## GLOBAL DECLERATIONS ##
 
-
-# 1. na kanw tin anadromi
-# 2. na kanw function gia ta error
-# 3. na balw kapoia break, logo anadromis
+# apla pragmata gia ton endiameso
+# 1. exw kanei merikes domes pou leei kai stis diafaneis px gen_quad() ktl
+# 2. exw balei ta quads gia ta start_blocks end_blocks
+# 3. ksekinisa polu ligo na blepw pou prepei na mpoun ta gen_quad gia to assignment px x=b
+#	 H polu douleia prepei na ginei sto expresion me ta temp values polu stis diafaneies gia
+#    tis periptseis twn x=b+1, x=(a+x)+1 ktl
+#	 Genika apo oti katalaba otan kaloume tin expression() tha prepei na pername kai mia metabliti
+#    wste otan teleiwsei na mas dwsei ton operand2.
+#    des tin grammi 399, gia na deis pws to skeftomai
 temporary_states = {0,1,2,3,4,5,6,7,8,9,10}
 final = 99
 line = 1
@@ -78,17 +83,20 @@ class Token:
         return self.token_type
 
 class Quad():
-	def __init__(self, id, op, x, y, z):
+	def __init__(self, id, operator, operand1, operand2, operand3):
 		self.id = id
-		self.op = op
-		self.x = x
-		self.y = y
-		self.z = z
+		self.operator = operator
+		self.operand1 = operand1
+		self.operand2 = operand2
+		self.operand3 = operand3
 
-def gen_quad(id, op, x, y, z):
+def gen_quad(operator, operand1, operand2, operand3):
 	global next_label
+	global quad
+	quad = Quad(next_label, operator, operand1, operand2, operand3)
 	next_label +=1
-	quad_list.append(Quad(id, op, x, y, z))
+	quad_list.append(quad)
+	print(' QUAD: %d :: '  %quad.id + quad.operator  + ' :: ' + quad.operand1)
 
 def next_quad():
 	return next_label
@@ -244,6 +252,7 @@ def def_main_function():
 	if token.family == "TOKEN_def":
 		lex()
 		if token.family == "TOKEN_id":
+			name = token.value
 			lex()
 			if token.family == "TOKEN_leftParenthesis":
 				lex()
@@ -255,7 +264,9 @@ def def_main_function():
 							lex()
 							declarations()
 							def_function()
+							gen_quad("begin_block", name, "_", "_")
 							statements()
+							gen_quad("end_block", name, "_", "_")
 							if token.family == "TOKEN_right_hashbracket":
 								lex()
 							else:
@@ -292,6 +303,7 @@ def def_function():
 	while(token.family == "TOKEN_def"):
 		lex()
 		if token.family == "TOKEN_id":
+			name = token.value
 			lex()
 			if token.family == "TOKEN_leftParenthesis":
 				lex()
@@ -306,7 +318,9 @@ def def_function():
 								lex()
 								declarations()
 								def_function()
+								gen_quad("begin_block", name, "_", "_")
 								statements()
+								gen_quad("end_block", name, "_", "_")
 								if token.family == "TOKEN_right_hashbracket":
 									lex()
 								else:
@@ -337,7 +351,7 @@ def statement():
 
 def simple_statement():
 	if token.family == 'TOKEN_id':
-		assignment_stat()
+		assignment_stat(token.value)
 	elif token.family == 'TOKEN_print':
 		print_stat()
 	elif token.family == 'TOKEN_return':
@@ -351,7 +365,7 @@ def structured_statement():
 
 
 
-def assignment_stat():
+def assignment_stat(operand3):
 	lex()
 	if token.family == "TOKEN_assignment":
 		lex()
@@ -382,7 +396,8 @@ def assignment_stat():
 			else:
 				error(token.line,"(")
 		else:
-			expression()
+			expression() 
+			gen_quad("=", "operand1","_", operand3)
 			if token.family == "TOKEN_semiColon":
 				lex()
 			else:
@@ -597,6 +612,9 @@ def main_function_call():
 			if token.family == "TOKEN_semiColon":
 				lex()
 
+def print_quads():
+	for quad in quad_list:
+		print(' QUAD: %d :: '  %quad.id + quad.operator  + ', ' + quad.operand1 + ', ' + quad.operand2 + ', ' + quad.operand3)
 
 def close_files():
 	file.close()
@@ -605,6 +623,8 @@ def main():
 	open_cpy_file()
 	parser()
 	close_files()
+	print_quads()
+
 
 
 
