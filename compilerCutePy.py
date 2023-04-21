@@ -96,7 +96,7 @@ def gen_quad(operator, operand1, operand2, operand3):
 	quad = Quad(next_label, operator, operand1, operand2, operand3)
 	next_label +=1
 	quad_list.append(quad)
-	print(' QUAD: %d :: '  %quad.id + quad.operator  + ' :: ' + quad.operand1)
+	print(' QUAD: %d :: '  %quad.id + quad.operator  + ', ' + quad.operand1 + ', ' + quad.operand2 + ', ' + quad.operand3)
 
 def next_quad():
 	return next_label
@@ -396,8 +396,9 @@ def assignment_stat(operand3):
 			else:
 				error(token.line,"(")
 		else:
-			expression() 
-			gen_quad("=", "operand1","_", operand3)
+			operand1 = expression()
+			print(operand1)
+			gen_quad("=", operand1,"_", operand3)
 			if token.family == "TOKEN_semiColon":
 				lex()
 			else:
@@ -536,24 +537,28 @@ def bool_factor():
 
 def expression():
 	optional_sign()
-	term()
+	expression_value = term()
 	while(token.value == "+" or token.value == "-"):
 		lex()
 		expression()
+
+	return expression_value
 
 def optional_sign():
 	if token.value == "+":
 		lex()
 
 def term():
-	factor()
+	factor1= factor()
 	while(token.value == "*" or token.value == '//'):
 		lex()
 		term()
+	return factor1
 
 def factor():
-
+	factor_value = 0
 	if token.family == "TOKEN_number":
+		factor_value = token.value
 		lex()
 	elif token.family == "TOKEN_leftParenthesis":
 		lex()
@@ -561,8 +566,10 @@ def factor():
 		if token.family == "TOKEN_rightParenthesis":
 			lex()
 	elif token.family == "TOKEN_id":
+		factor_value = token.value
 		lex()
 		idtail()
+	return factor_value
 
 def idtail():
 	if token.family == "TOKEN_leftParenthesis":
@@ -570,6 +577,7 @@ def idtail():
 		actual_par_list()
 		if token.family == "TOKEN_rightParenthesis":
 			lex()
+
 def actual_par_list():
 	expression()
 	while(token.family == "TOKEN_comma"):
