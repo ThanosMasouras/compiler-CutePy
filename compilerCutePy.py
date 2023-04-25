@@ -537,15 +537,16 @@ def bool_factor():
 
 def expression():
 	optional_sign()
-	expression_value = term()
+	term1 = term()
+	print("term1 = ", term1)
 	while(token.value == "+" or token.value == "-"):
 		lex()
-		expression()
+		term()
 
-	return expression_value
+	return term1
 
 def optional_sign():
-	if token.value == "+":
+	if token.value == "+" or token.value == "-":
 		lex()
 
 def term():
