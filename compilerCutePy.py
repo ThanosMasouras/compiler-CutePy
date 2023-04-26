@@ -16,6 +16,8 @@ line = 1
 skip_char = 0
 next_label = 0
 quad_list = []
+tmpVarsList = []
+x = 0
 reserved_words_list = [
     'def', 
     'declare',
@@ -113,6 +115,15 @@ def make_list(label):
 
 def merge(list1, list2):
     return list1 + list2
+
+def new_temp(): #returns a new temporary variable as T_x where x is an integer
+	global tmpVarsList
+	global x
+	tmpVar = '%_'
+	tmpVar += str(x)
+	x += 1
+	tmpVarsList.append(tmpVar)
+	return tmpVar
 
 #backpatch
 #newTemp()
@@ -383,6 +394,7 @@ def assignment_stat(operand3):
 								lex()
 								if token.family == "TOKEN_semiColon":
 									lex()
+									gen_quad("in", operand3, "_", "_")
 								else:
 									error(token.line,";")
 							else:
@@ -397,7 +409,6 @@ def assignment_stat(operand3):
 				error(token.line,"(")
 		else:
 			operand1 = expression()
-			print(operand1)
 			gen_quad("=", operand1,"_", operand3)
 			if token.family == "TOKEN_semiColon":
 				lex()
@@ -409,13 +420,14 @@ def print_stat():
 		lex()
 		if token.family == "TOKEN_leftParenthesis":
 			lex()
-			expression()
+			operand1 = expression()
+			gen_quad("out",operand1, "_","_")
 			if token.family == "TOKEN_rightParenthesis":
 				lex()
 				if token.family == "TOKEN_semiColon":
 					lex()
 				else:
-					error(token.line,":")
+					error(token.line,";")
 			else:
 				error(token.line,")")
 		else:
@@ -425,7 +437,8 @@ def return_stat():
 		lex()
 		if token.family == "TOKEN_leftParenthesis":
 			lex()
-			expression()
+			operand1 = expression()
+			gen_quad("ret", "_","_", operand1)
 			if token.family == "TOKEN_rightParenthesis":
 				lex()
 				if token.family == "TOKEN_semiColon":
@@ -538,10 +551,13 @@ def bool_factor():
 def expression():
 	optional_sign()
 	term1 = term()
-	print("term1 = ", term1)
 	while(token.value == "+" or token.value == "-"):
+		op = token.value
 		lex()
-		term()
+		term2 = term()
+		temp_var = new_temp()
+		gen_quad(op, term1, term2, temp_var)
+		term1 = temp_var
 
 	return term1
 
@@ -550,10 +566,14 @@ def optional_sign():
 		lex()
 
 def term():
-	factor1= factor()
+	factor1 = factor()
 	while(token.value == "*" or token.value == '//'):
+		op = token.value
 		lex()
-		term()
+		factor2 = factor()
+		temp_var = new_temp()
+		gen_quad(op, factor1, factor2, temp_var)
+		factor1 = temp_var
 	return factor1
 
 def factor():
@@ -563,13 +583,19 @@ def factor():
 		lex()
 	elif token.family == "TOKEN_leftParenthesis":
 		lex()
-		expression()
+		factor_value = expression()
 		if token.family == "TOKEN_rightParenthesis":
 			lex()
 	elif token.family == "TOKEN_id":
 		factor_value = token.value
+		print("hereeeeeeeeee:", factor_value)
 		lex()
-		idtail()
+		tail = idtail()
+		if tail:
+			temp_var = new_temp()
+			gen_quad("par", temp_var, "ret", "_")
+			gen_quad("call", factor_value, "_", "_")
+			factor_value = temp_var
 	return factor_value
 
 def idtail():
@@ -578,12 +604,15 @@ def idtail():
 		actual_par_list()
 		if token.family == "TOKEN_rightParenthesis":
 			lex()
+		return True
 
 def actual_par_list():
-	expression()
+	operand1 = expression()
+	gen_quad("par", operand1, "cv", "_")
 	while(token.family == "TOKEN_comma"):
 		lex()
-		expression()
+		operand1 = expression()
+		gen_quad("par", operand1, "cv", "_")
 
 
 
