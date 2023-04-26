@@ -5,9 +5,9 @@ import sys
 # 1. exw kanei merikes domes pou leei kai stis diafaneis px gen_quad() ktl
 # 2. exw balei ta quads gia ta start_blocks end_blocks
 # 3. ksekinisa polu ligo na blepw pou prepei na mpoun ta gen_quad gia to assignment px x=b
-#	 H polu douleia prepei na ginei sto expresion me ta temp values polu stis diafaneies gia
+#    H polu douleia prepei na ginei sto expresion me ta temp values polu stis diafaneies gia
 #    tis periptseis twn x=b+1, x=(a+x)+1 ktl
-#	 Genika apo oti katalaba otan kaloume tin expression() tha prepei na pername kai mia metabliti
+#    Genika apo oti katalaba otan kaloume tin expression() tha prepei na pername kai mia metabliti
 #    wste otan teleiwsei na mas dwsei ton operand2.
 #    des tin grammi 399, gia na deis pws to skeftomai
 temporary_states = {0,1,2,3,4,5,6,7,8,9,10}
@@ -85,23 +85,23 @@ class Token:
         return self.token_type
 
 class Quad():
-	def __init__(self, id, operator, operand1, operand2, operand3):
-		self.id = id
-		self.operator = operator
-		self.operand1 = operand1
-		self.operand2 = operand2
-		self.operand3 = operand3
+    def __init__(self, id, operator, operand1, operand2, operand3):
+        self.id = id
+        self.operator = operator
+        self.operand1 = operand1
+        self.operand2 = operand2
+        self.operand3 = operand3
 
 def gen_quad(operator, operand1, operand2, operand3):
-	global next_label
-	global quad
-	quad = Quad(next_label, operator, operand1, operand2, operand3)
-	next_label +=1
-	quad_list.append(quad)
-	print(' QUAD: %d :: '  %quad.id + quad.operator  + ', ' + quad.operand1 + ', ' + quad.operand2 + ', ' + quad.operand3)
+    global next_label
+    global quad
+    quad = Quad(next_label, operator, operand1, operand2, operand3)
+    next_label +=1
+    quad_list.append(quad)
+    #print(' QUAD: %d :: '  %quad.id + quad.operator  + ', ' + quad.operand1 + ', ' + quad.operand2 + ', ' + quad.operand3)
 
 def next_quad():
-	return next_label
+    return next_label
 
 def empty_list():
     return list()
@@ -117,32 +117,32 @@ def merge(list1, list2):
     return list1 + list2
 
 def backpatch(list, label):
-	global quad_list
-	for quad in quad_list:
-		if quad.id in list:
-			quad.operand3 = label
+    global quad_list
+    for quad in quad_list:
+        if quad.id in list:
+            quad.operand3 = str(label)
 
 def new_temp(): #returns a new temporary variable as T_x where x is an integer
-	global tmpVarsList
-	global x
-	tmpVar = '%_'
-	tmpVar += str(x)
-	x += 1
-	tmpVarsList.append(tmpVar)
-	return tmpVar
+    global tmpVarsList
+    global x
+    tmpVar = '%_'
+    tmpVar += str(x)
+    x += 1
+    tmpVarsList.append(tmpVar)
+    return tmpVar
 
 #backpatch
 def open_cpy_file():
-	global file
+    global file
 
-	if len(sys.argv) < 2:
-		print("Error: There is no input file")
-		sys.exit()
-	if sys.argv[1][-3:] != "cpy":
-		print("Error: Input file is not a CutePy file")
-		sys.exit()
-		
-	file = open(sys.argv[1], "r")
+    if len(sys.argv) < 2:
+        print("Error: There is no input file")
+        sys.exit()
+    if sys.argv[1][-3:] != "cpy":
+        print("Error: Input file is not a CutePy file")
+        sys.exit()
+        
+    file = open(sys.argv[1], "r")
 
 
 def error(line, missing_token):
@@ -150,523 +150,554 @@ def error(line, missing_token):
     exit()
 
 def parser():
-	global token
-	lex()
-	start_rule()
+    global token
+    lex()
+    start_rule()
 
 def lex():
-	word = []
-	state = 0
-	global line
-	global skip_char
-	move_file_pointer = False
-	while state in temporary_states:
-		previus_pos = file.tell()
-		char = file.read(1)
-		word.append(char)
+    word = []
+    state = 0
+    global line
+    global skip_char
+    move_file_pointer = False
+    while state in temporary_states:
+        previus_pos = file.tell()
+        char = file.read(1)
+        word.append(char)
 
-		if state == 0:
-			if char == "":
-				create_token("EOF",line)
-				break
-			if char.isspace():
-				state = 0
-			if char.isalpha() or char == "_":
-				state = 1
-			if char.isdigit():
-				state = 2
-			if char == '<':
-				state = 3
-			if char == '>':
-				state = 4
-			if char == '#':
-				state = 5
-			if char in ('+', '-', '*', ',', ';', ':', '{', '}', '(', ')', '[', ']'):
-				state = final #temp value
-			if char == '!':
-				state = 6
-			if char == '/':
-				state = 9
-			if char == '=':
-				state = 10
-		elif state == 1:
-			if not char.isalnum() and char != "_" and char != '"' and char != "”":
-				state = final
-				move_file_pointer = True
-		elif state == 2:
-			if not char.isdigit():
-				state = final
-				move_file_pointer = True
-		elif state == 3:
-			if char != '=':
-				move_file_pointer = True
-			state = final
-		elif state == 4:
-			if char != "=":
-				move_file_pointer = True
-			state = final
-		elif state == 5:
-			if char not in ('{','}','$'):
-				move_file_pointer = True
-			state = final
-			if char == '$':
-				state = 7
-		elif state == 6:
-			if char != "=":
-				move_file_pointer = True
-			state = final
-		elif state == 7:
-			if char == "#":
-				state = 8
-		elif state == 8:
-			if char == "$":
-				state = 0
-				del word[:]
-		elif state == 9:
-			if char != "/":
-				move_file_pointer = True
-			state = final
-		elif state == 10:
-			if char != "=":
-				move_file_pointer = True
-			state = final
-		if char.isspace():
-			del word[-1]
-			move_file_pointer = False
-			if char == "\n":
-				line=line +1
-	if move_file_pointer == True:
-		del word[-1]
-		file.seek(previus_pos)
-	if state == final :
-			word = ''.join(word)
-			create_token(word,line)
+        if state == 0:
+            if char == "":
+                create_token("EOF",line)
+                break
+            if char.isspace():
+                state = 0
+            if char.isalpha() or char == "_":
+                state = 1
+            if char.isdigit():
+                state = 2
+            if char == '<':
+                state = 3
+            if char == '>':
+                state = 4
+            if char == '#':
+                state = 5
+            if char in ('+', '-', '*', ',', ';', ':', '{', '}', '(', ')', '[', ']'):
+                state = final #temp value
+            if char == '!':
+                state = 6
+            if char == '/':
+                state = 9
+            if char == '=':
+                state = 10
+        elif state == 1:
+            if not char.isalnum() and char != "_" and char != '"' and char != "”":
+                state = final
+                move_file_pointer = True
+        elif state == 2:
+            if not char.isdigit():
+                state = final
+                move_file_pointer = True
+        elif state == 3:
+            if char != '=':
+                move_file_pointer = True
+            state = final
+        elif state == 4:
+            if char != "=":
+                move_file_pointer = True
+            state = final
+        elif state == 5:
+            if char not in ('{','}','$'):
+                move_file_pointer = True
+            state = final
+            if char == '$':
+                state = 7
+        elif state == 6:
+            if char != "=":
+                move_file_pointer = True
+            state = final
+        elif state == 7:
+            if char == "#":
+                state = 8
+        elif state == 8:
+            if char == "$":
+                state = 0
+                del word[:]
+        elif state == 9:
+            if char != "/":
+                move_file_pointer = True
+            state = final
+        elif state == 10:
+            if char != "=":
+                move_file_pointer = True
+            state = final
+        if char.isspace():
+            del word[-1]
+            move_file_pointer = False
+            if char == "\n":
+                line=line +1
+    if move_file_pointer == True:
+        del word[-1]
+        file.seek(previus_pos)
+    if state == final :
+            word = ''.join(word)
+            create_token(word,line)
 
 
 
 def create_token(word,line):
-	global token
-	if word in tokens_dict.keys():
-		token = Token(tokens_dict[word], word, line)
-	elif word.isdigit():
-		token = Token(tokens_dict['number'], word, line)
-	else:
-		token = Token(tokens_dict['ID'], word, line)
-	print(' LINE: %d :: '  %token.line + token.family + ' :: ' + token.value)
+    global token
+    if word in tokens_dict.keys():
+        token = Token(tokens_dict[word], word, line)
+    elif word.isdigit():
+        token = Token(tokens_dict['number'], word, line)
+    else:
+        token = Token(tokens_dict['ID'], word, line)
+    print(' LINE: %d :: '  %token.line + token.family + ' :: ' + token.value)
 
 
 def start_rule():
-	def_main_part()
-	call_main_part()
+    def_main_part()
+    call_main_part()
 
 def def_main_part():
-	while( token.family == "TOKEN_def"):
-		def_main_function()
-	
+    while( token.family == "TOKEN_def"):
+        def_main_function()
+    
 
 def def_main_function():
-	if token.family == "TOKEN_def":
-		lex()
-		if token.family == "TOKEN_id":
-			name = token.value
-			lex()
-			if token.family == "TOKEN_leftParenthesis":
-				lex()
-				if token.family == "TOKEN_rightParenthesis":
-					lex()
-					if token.family == "TOKEN_colon":
-						lex()
-						if token.family == "TOKEN_left_hashbracket":
-							lex()
-							declarations()
-							def_function()
-							gen_quad("begin_block", name, "_", "_")
-							statements()
-							gen_quad("end_block", name, "_", "_")
-							if token.family == "TOKEN_right_hashbracket":
-								lex()
-							else:
-								error(token.line, "#}")
-						else:
-							error(token.line, "#{")
-					else:
-						error(token.line, ":")
-				else:
-					error(token.line, ")")
-			else:
-				error(token.line, "(")
-		else:
-			error(token.line, "id")
-	else:
-		error(token.line, "def")
+    if token.family == "TOKEN_def":
+        lex()
+        if token.family == "TOKEN_id":
+            name = token.value
+            lex()
+            if token.family == "TOKEN_leftParenthesis":
+                lex()
+                if token.family == "TOKEN_rightParenthesis":
+                    lex()
+                    if token.family == "TOKEN_colon":
+                        lex()
+                        if token.family == "TOKEN_left_hashbracket":
+                            lex()
+                            declarations()
+                            def_function()
+                            gen_quad("begin_block", name, "_", "_")
+                            statements()
+                            gen_quad("end_block", name, "_", "_")
+                            if token.family == "TOKEN_right_hashbracket":
+                                lex()
+                            else:
+                                error(token.line, "#}")
+                        else:
+                            error(token.line, "#{")
+                    else:
+                        error(token.line, ":")
+                else:
+                    error(token.line, ")")
+            else:
+                error(token.line, "(")
+        else:
+            error(token.line, "id")
+    else:
+        error(token.line, "def")
 
 
 def declarations():
-	while(token.family == "TOKEN_hashtag"):
-		lex()
-		if token.family == "TOKEN_declare":
-			lex()
-			declaration_line()
-		else:
-			error(token.line, "declare")
+    while(token.family == "TOKEN_hashtag"):
+        lex()
+        if token.family == "TOKEN_declare":
+            lex()
+            declaration_line()
+        else:
+            error(token.line, "declare")
 
 def declaration_line():
-	if token.family == "TOKEN_id":
-		lex()
-		id_list()
+    if token.family == "TOKEN_id":
+        lex()
+        id_list()
 
 def def_function():
-	while(token.family == "TOKEN_def"):
-		lex()
-		if token.family == "TOKEN_id":
-			name = token.value
-			lex()
-			if token.family == "TOKEN_leftParenthesis":
-				lex()
-				if token.family == "TOKEN_id":
-					lex()
-					id_list()
-					if token.family == "TOKEN_rightParenthesis":
-						lex()
-						if token.family == "TOKEN_colon":
-							lex()
-							if token.family == "TOKEN_left_hashbracket":
-								lex()
-								declarations()
-								def_function()
-								gen_quad("begin_block", name, "_", "_")
-								statements()
-								gen_quad("end_block", name, "_", "_")
-								if token.family == "TOKEN_right_hashbracket":
-									lex()
-								else:
-									error(token.line,"#}")
-							else:
-								error(token.line,"#{")
-						else:
-							error(token.line,":")
-					else:
-						error(token.line,")")
-				else:
-					error(token.line,"id")
-			else:
-				error(token.line,"(")
-		else:
-			error(token.line,"id")
+    while(token.family == "TOKEN_def"):
+        lex()
+        if token.family == "TOKEN_id":
+            name = token.value
+            lex()
+            if token.family == "TOKEN_leftParenthesis":
+                lex()
+                if token.family == "TOKEN_id":
+                    lex()
+                    id_list()
+                    if token.family == "TOKEN_rightParenthesis":
+                        lex()
+                        if token.family == "TOKEN_colon":
+                            lex()
+                            if token.family == "TOKEN_left_hashbracket":
+                                lex()
+                                declarations()
+                                def_function()
+                                gen_quad("begin_block", name, "_", "_")
+                                statements()
+                                gen_quad("end_block", name, "_", "_")
+                                if token.family == "TOKEN_right_hashbracket":
+                                    lex()
+                                else:
+                                    error(token.line,"#}")
+                            else:
+                                error(token.line,"#{")
+                        else:
+                            error(token.line,":")
+                    else:
+                        error(token.line,")")
+                else:
+                    error(token.line,"id")
+            else:
+                error(token.line,"(")
+        else:
+            error(token.line,"id")
 
 
 def statements():
-	while( token.family in ('TOKEN_id', 'TOKEN_print', 'TOKEN_return', 'TOKEN_if', 'TOKEN_while')):
-		statement()
+    while( token.family in ('TOKEN_id', 'TOKEN_print', 'TOKEN_return', 'TOKEN_if', 'TOKEN_while')):
+        statement()
 
 def statement():
-	if token.family in ('TOKEN_id', 'TOKEN_print', 'TOKEN_return'):
-		simple_statement()
-	elif token.family in ("TOKEN_if", "TOKEN_while"):
-		structured_statement()
+    if token.family in ('TOKEN_id', 'TOKEN_print', 'TOKEN_return'):
+        simple_statement()
+    elif token.family in ("TOKEN_if", "TOKEN_while"):
+        structured_statement()
 
 def simple_statement():
-	if token.family == 'TOKEN_id':
-		assignment_stat(token.value)
-	elif token.family == 'TOKEN_print':
-		print_stat()
-	elif token.family == 'TOKEN_return':
-		return_stat()
+    if token.family == 'TOKEN_id':
+        assignment_stat(token.value)
+    elif token.family == 'TOKEN_print':
+        print_stat()
+    elif token.family == 'TOKEN_return':
+        return_stat()
 
 def structured_statement():
-	if token.family == 'TOKEN_if':
-		if_stat()
-	elif token.family == 'TOKEN_while':
-		while_stat()
+    if token.family == 'TOKEN_if':
+        if_stat()
+    elif token.family == 'TOKEN_while':
+        while_stat()
 
 
 
 def assignment_stat(operand3):
-	lex()
-	if token.family == "TOKEN_assignment":
-		lex()
-		if token.value == "int":
-			lex()
-			if token.family == "TOKEN_leftParenthesis":
-				lex()
-				if token.family == "TOKEN_input":
-					lex()
-					if token.family == "TOKEN_leftParenthesis":
-						lex()
-						if token.family == "TOKEN_rightParenthesis":
-							lex()
-							if token.family == "TOKEN_rightParenthesis":
-								lex()
-								if token.family == "TOKEN_semiColon":
-									lex()
-									gen_quad("in", operand3, "_", "_")
-								else:
-									error(token.line,";")
-							else:
-								error(token.line,")")
-						else:
-							error(token.line,")")
-					else:
-						error(token.line,"(")
-				else:
-					error(token.line,"iput")
-			else:
-				error(token.line,"(")
-		else:
-			operand1 = expression()
-			gen_quad("=", operand1,"_", operand3)
-			if token.family == "TOKEN_semiColon":
-				lex()
-			else:
-				error(token.line,";")
+    lex()
+    if token.family == "TOKEN_assignment":
+        lex()
+        if token.value == "int":
+            lex()
+            if token.family == "TOKEN_leftParenthesis":
+                lex()
+                if token.family == "TOKEN_input":
+                    lex()
+                    if token.family == "TOKEN_leftParenthesis":
+                        lex()
+                        if token.family == "TOKEN_rightParenthesis":
+                            lex()
+                            if token.family == "TOKEN_rightParenthesis":
+                                lex()
+                                if token.family == "TOKEN_semiColon":
+                                    lex()
+                                    gen_quad("in", operand3, "_", "_")
+                                else:
+                                    error(token.line,";")
+                            else:
+                                error(token.line,")")
+                        else:
+                            error(token.line,")")
+                    else:
+                        error(token.line,"(")
+                else:
+                    error(token.line,"iput")
+            else:
+                error(token.line,"(")
+        else:
+            operand1 = expression()
+            gen_quad("=", operand1,"_", operand3)
+            if token.family == "TOKEN_semiColon":
+                lex()
+            else:
+                error(token.line,";")
 
 
 def print_stat():
-		lex()
-		if token.family == "TOKEN_leftParenthesis":
-			lex()
-			operand1 = expression()
-			gen_quad("out",operand1, "_","_")
-			if token.family == "TOKEN_rightParenthesis":
-				lex()
-				if token.family == "TOKEN_semiColon":
-					lex()
-				else:
-					error(token.line,";")
-			else:
-				error(token.line,")")
-		else:
-			error(token.line,"(")
-	
+        lex()
+        if token.family == "TOKEN_leftParenthesis":
+            lex()
+            operand1 = expression()
+            gen_quad("out",operand1, "_","_")
+            if token.family == "TOKEN_rightParenthesis":
+                lex()
+                if token.family == "TOKEN_semiColon":
+                    lex()
+                else:
+                    error(token.line,";")
+            else:
+                error(token.line,")")
+        else:
+            error(token.line,"(")
+    
 def return_stat():
-		lex()
-		if token.family == "TOKEN_leftParenthesis":
-			lex()
-			operand1 = expression()
-			gen_quad("ret", "_","_", operand1)
-			if token.family == "TOKEN_rightParenthesis":
-				lex()
-				if token.family == "TOKEN_semiColon":
-					lex()
-				else:
-					error(token.line,";")
-			else:
-				error(token.line,"dd)")
-		else:
-			error(token.line,"(")
-	
+        lex()
+        if token.family == "TOKEN_leftParenthesis":
+            lex()
+            operand1 = expression()
+            gen_quad("ret", "_","_", operand1)
+            if token.family == "TOKEN_rightParenthesis":
+                lex()
+                if token.family == "TOKEN_semiColon":
+                    lex()
+                else:
+                    error(token.line,";")
+            else:
+                error(token.line,"dd)")
+        else:
+            error(token.line,"(")
+    
 
 def if_stat():
-	lex()
-	if token.family == "TOKEN_leftParenthesis":
-		lex()
-		condition()
-		if token.family == "TOKEN_rightParenthesis":
-			lex()
-			if token.family == "TOKEN_colon":
-				lex()
-				if token.family == "TOKEN_left_hashbracket":
-					lex()
-					statements()
-					if token.family == "TOKEN_right_hashbracket":
-						lex()	
-					else:
-						error(token.line,"#}")
-				else:
-					statement()
-			else:
-				error(token.line,":")
-		else:
-			error(token.line,")")
+    lex()
+    if token.family == "TOKEN_leftParenthesis":
+        lex()
+        (b_true, b_false) = condition()
+        if token.family == "TOKEN_rightParenthesis":
+            lex()
+            if token.family == "TOKEN_colon":
+                lex()
+                if token.family == "TOKEN_left_hashbracket":
+                    lex()
+                    backpatch(b_true, next_quad())
+                    statements()
+                    skip_list = make_list(next_quad())
+                    gen_quad("jump", "_", "_", "_")
+                    backpatch(b_false, next_quad()) 
+                    if token.family == "TOKEN_right_hashbracket":
+                        lex()   
+                    else:
+                        error(token.line,"#}")
+                else:
+                    backpatch(b_true, next_quad())
+                    statement()
+                    skip_list = make_list(next_quad())
+                    gen_quad("jump", "_", "_", "_")
+                    backpatch(b_false, next_quad())          
+            else:
+                error(token.line,":")
+        else:
+            error(token.line,")")
 
-		if token.family =="TOKEN_else":
-			lex()
-			if token.family =="TOKEN_colon":
-				lex()
-				if token.family =="TOKEN_left_hashbracket":
-					lex()
-					statements()
-					if token.family == "TOKEN_right_hashbracket":
-						lex()
-					else:
-						error(token.line,"#}")
-				else:
-					statement()
-			else:
-				error(token.line,":")
+        if token.family =="TOKEN_else":
+            lex()
+            if token.family =="TOKEN_colon":
+                lex()
+                if token.family =="TOKEN_left_hashbracket":
+                    lex()
+                    statements()
+                    if token.family == "TOKEN_right_hashbracket":
+                        lex()
+                    else:
+                        error(token.line,"#}")
+                else:
+                    statement()
+                    backpatch(skip_list, next_quad())
+            else:
+                error(token.line,":")
 
 def while_stat():
-	lex()
-	if token.family == "TOKEN_leftParenthesis":
-		lex()
-		condition()
-		if token.family == "TOKEN_rightParenthesis":
-			lex()
-			if token.family == "TOKEN_colon":
-				lex()
-				if token.family == "TOKEN_left_hashbracket":
-					lex()
-					statements()
-					if token.family == "TOKEN_right_hashbracket":
-						lex()	
-					else:
-						error(token.line,"#}")
-				else:
-					statement()
-			else:
-				error(token.line,":")
-		else:
-			error(token.line,")")
-	else:
-		error(token.line,"(")
+    lex()
+    b_quad = next_quad()
+    if token.family == "TOKEN_leftParenthesis":
+        lex()
+        (b_true, b_false) = condition()
+        if token.family == "TOKEN_rightParenthesis":
+            lex()
+            if token.family == "TOKEN_colon":
+                lex()
+                if token.family == "TOKEN_left_hashbracket":
+                    lex()
+                    backpatch(b_true, next_quad())
+                    statements()
+                    gen_quad('jump','_','_',str(b_quad))
+                    backpatch(b_false, next_quad())
+                    if token.family == "TOKEN_right_hashbracket":
+                        lex()   
+                    else:
+                        error(token.line,"#}")
+                else:
+                    backpatch(b_true, next_quad())
+                    statement()
+                    gen_quad('jump','_','_',b_quad)
+                    backpatch(b_false, next_quad())
+            else:
+                error(token.line,":")
+        else:
+            error(token.line,")")
+    else:
+        error(token.line,"(")
 
 def condition():
-	bool_term()
-	while(token.value == 'or'):
-		lex()
-		bool_term()
+    (b_true, b_false) = (q1_true, q1_false) = bool_term()
+    while(token.value == 'or'):
+        backpatch(b_false, next_quad())
+        lex()
+        (q2_true, q2_false) = bool_term()
+        b_true  = merge(b_true, q2_true)
+        b_false = q2_false
+
+    return (b_true, b_false)
 
 def bool_term():
-	bool_factor()
-	while(token.value == 'and'):
-		lex()
-		bool_factor()
+    (q_true, q_false) = (r1_true, r1_false) = bool_factor()
+    while(token.value == 'and'):
+        backpatch(q_true, next_quad())
+        lex()
+        (r2_true, r2_false) = bool_factor()
+        q_false = merge(q_false, r2_false)
+        q_true  = r2_true
+    return (q_true, q_false)
 
 def bool_factor():
-	if token.value == "not":
-		lex()
-		if token.family == 'TOKEN_leftBracket':
-			condition()
-			lex()
-			if token.family == 'TOKEN_rightBracket':
-				lex()
-	elif token.family == 'TOKEN_leftBracket':
-			condition()
-			lex()
-			if token.family == 'TOKEN_rightBracket':
-				lex()
-	else:
-		expression()
-		if token.value in ['==','<','>','!=','<=','>=']:
-			lex()
-			expression()
-
+    if token.value == "not":
+        lex()
+        if token.family == 'TOKEN_leftBracket':
+            lex()
+            retval = condition()
+            if token.family == 'TOKEN_rightBracket':
+                lex()
+    elif token.family == 'TOKEN_leftBracket':
+            lex()
+            retval = condition()
+            if token.family == 'TOKEN_rightBracket':
+                lex()
+    else:
+        exp1 = expression()
+        if token.value in ['==','<','>','!=','<=','>=']:
+            op = token.value
+            lex()
+            exp2 = expression()
+            r_true = make_list(next_quad())
+            gen_quad(op, exp1, exp2, "_")
+            r_false = make_list(next_quad())
+            gen_quad('jump', "_", "_", "_")
+            retval = (r_true, r_false)
+    return retval
 
 
 def expression():
-	optional_sign()
-	term1 = term()
-	while(token.value == "+" or token.value == "-"):
-		op = token.value
-		lex()
-		term2 = term()
-		temp_var = new_temp()
-		gen_quad(op, term1, term2, temp_var)
-		term1 = temp_var
+    optional_sign()
+    term1 = term()
+    while(token.value == "+" or token.value == "-"):
+        op = token.value
+        lex()
+        term2 = term()
+        temp_var = new_temp()
+        gen_quad(op, term1, term2, temp_var)
+        term1 = temp_var
 
-	return term1
+    return term1
 
 def optional_sign():
-	if token.value == "+" or token.value == "-":
-		lex()
+    if token.value == "+" or token.value == "-":
+        lex()
 
 def term():
-	factor1 = factor()
-	while(token.value == "*" or token.value == '//'):
-		op = token.value
-		lex()
-		factor2 = factor()
-		temp_var = new_temp()
-		gen_quad(op, factor1, factor2, temp_var)
-		factor1 = temp_var
-	return factor1
+    factor1 = factor()
+    while(token.value == "*" or token.value == '//'):
+        op = token.value
+        lex()
+        factor2 = factor()
+        temp_var = new_temp()
+        gen_quad(op, factor1, factor2, temp_var)
+        factor1 = temp_var
+    return factor1
 
 def factor():
-	factor_value = 0
-	if token.family == "TOKEN_number":
-		factor_value = token.value
-		lex()
-	elif token.family == "TOKEN_leftParenthesis":
-		lex()
-		factor_value = expression()
-		if token.family == "TOKEN_rightParenthesis":
-			lex()
-	elif token.family == "TOKEN_id":
-		factor_value = token.value
-		print("hereeeeeeeeee:", factor_value)
-		lex()
-		tail = idtail()
-		if tail:
-			temp_var = new_temp()
-			gen_quad("par", temp_var, "ret", "_")
-			gen_quad("call", factor_value, "_", "_")
-			factor_value = temp_var
-	return factor_value
+    factor_value = 0
+    if token.family == "TOKEN_number":
+        factor_value = token.value
+        lex()
+    elif token.family == "TOKEN_leftParenthesis":
+        lex()
+        factor_value = expression()
+        if token.family == "TOKEN_rightParenthesis":
+            lex()
+    elif token.family == "TOKEN_id":
+        factor_value = token.value
+        print("hereeeeeeeeee:", factor_value)
+        lex()
+        tail = idtail()
+        if tail:
+            temp_var = new_temp()
+            gen_quad("par", temp_var, "ret", "_")
+            gen_quad("call", factor_value, "_", "_")
+            factor_value = temp_var
+    return factor_value
 
 def idtail():
-	if token.family == "TOKEN_leftParenthesis":
-		lex()
-		actual_par_list()
-		if token.family == "TOKEN_rightParenthesis":
-			lex()
-		return True
+    if token.family == "TOKEN_leftParenthesis":
+        lex()
+        actual_par_list()
+        if token.family == "TOKEN_rightParenthesis":
+            lex()
+        return True
 
 def actual_par_list():
-	operand1 = expression()
-	gen_quad("par", operand1, "cv", "_")
-	while(token.family == "TOKEN_comma"):
-		lex()
-		operand1 = expression()
-		gen_quad("par", operand1, "cv", "_")
+    operand1 = expression()
+    gen_quad("par", operand1, "cv", "_")
+    while(token.family == "TOKEN_comma"):
+        lex()
+        operand1 = expression()
+        gen_quad("par", operand1, "cv", "_")
 
 
 
 
 def id_list():
-	while(token.family == "TOKEN_comma"):
-		lex()
-		if token.family == "TOKEN_id":
-			lex()
+    while(token.family == "TOKEN_comma"):
+        lex()
+        if token.family == "TOKEN_id":
+            lex()
 
 
 
 
 def call_main_part():
-	if token.family == "TOKEN_if":
-		lex()
-		if token.value == '__name__':
-			lex()
-			if token.family == "TOKEN_equal":
-				lex()
-				if token.value == '”__main__”':
-					lex()
-					if token.family == 'TOKEN_colon':
-						lex()
-						while(token.family == "TOKEN_id"):
-							main_function_call()
+    if token.family == "TOKEN_if":
+        lex()
+        if token.value == '__name__':
+            lex()
+            if token.family == "TOKEN_equal":
+                lex()
+                if token.value == '”__main__”':
+                    lex()
+                    if token.family == 'TOKEN_colon':
+                        lex()
+                        while(token.family == "TOKEN_id"):
+                            main_function_call()
 
 
 def main_function_call():
-	lex()
-	if token.family == "TOKEN_leftParenthesis":
-		lex()
-		if token.family == "TOKEN_rightParenthesis":
-			lex()
-			if token.family == "TOKEN_semiColon":
-				lex()
+    lex()
+    if token.family == "TOKEN_leftParenthesis":
+        lex()
+        if token.family == "TOKEN_rightParenthesis":
+            lex()
+            if token.family == "TOKEN_semiColon":
+                lex()
 
 def print_quads():
-	for quad in quad_list:
-		print(' QUAD: %d :: '  %quad.id + quad.operator  + ', ' + quad.operand1 + ', ' + quad.operand2 + ', ' + quad.operand3)
+    for quad in quad_list:
+        print(' QUAD: %d :: '  %quad.id + quad.operator  + ', ' + quad.operand1 + ', ' + quad.operand2 + ', ' + quad.operand3)
 
 def close_files():
-	file.close()
+    file.close()
 
 def main():
-	open_cpy_file()
-	parser()
-	close_files()
-	print_quads()
+    open_cpy_file()
+    parser()
+    close_files()
+    print_quads()
 
 
 
