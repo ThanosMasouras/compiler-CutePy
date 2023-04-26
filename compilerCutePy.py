@@ -116,6 +116,12 @@ def make_list(label):
 def merge(list1, list2):
     return list1 + list2
 
+def backpatch(list, label):
+	global quad_list
+	for quad in quad_list:
+		if quad.id in list:
+			quad.operand3 = label
+
 def new_temp(): #returns a new temporary variable as T_x where x is an integer
 	global tmpVarsList
 	global x
@@ -126,7 +132,6 @@ def new_temp(): #returns a new temporary variable as T_x where x is an integer
 	return tmpVar
 
 #backpatch
-#newTemp()
 def open_cpy_file():
 	global file
 
