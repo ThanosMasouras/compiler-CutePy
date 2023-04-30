@@ -18,6 +18,7 @@ next_label = 0
 quad_list = []
 tmpVarsList = []
 x = 0
+scopes = []
 reserved_words_list = [
     'def', 
     'declare',
@@ -75,7 +76,7 @@ tokens_dict = {
     '#' : 'TOKEN_hashtag'
 }
 
-class Token:
+class Token():
     def __init__(self, family, value, line):
         self.family = family
         self.value = value
@@ -91,6 +92,53 @@ class Quad():
         self.operand1 = operand1
         self.operand2 = operand2
         self.operand3 = operand3
+
+class Variable():
+    def __init__(self, name, datatype, offset):
+        self.name = name
+        self.datatype = datatype
+        self.offset = offset
+
+class Parameter():
+    def __init__(self, name, datatype, mode, offset):
+        self.name = name
+        self.datatype = datatype
+        self.mode = mode
+        self.offset = offset
+
+class Function():
+    def __init__(self, name, datatype, startingQuad, frameLength, formalParameters):
+        self.name = name
+        self.datatype = datatype
+        self.startingQuad = startingQuad
+        self.frameLength = frameLength
+        self.formalParameters =  formalParameters
+
+class FormalParameter():
+    def __init__(self, name, datatype, mode):
+        self.name = name
+        self.datatype = datatype
+        self.mode = mode
+
+class TemporaryVariable():
+    def __init__(self, name, datatype, offset):
+        self.name = name
+        self.datatype = datatype
+        self.offset = offset
+
+class Scope():
+    def __init__(self, nested_level):
+        self.nested_level = nested_level
+        self.entities = list()
+
+    def addEntity(self, entity):
+        self.entities.append(entity)
+
+class Entity():
+    def __init__(self, name, entity_type):
+        self.name = name
+        self.entity_type = entity_type 
+
 
 def gen_quad(operator, operand1, operand2, operand3):
     global next_label
@@ -624,7 +672,6 @@ def factor():
             lex()
     elif token.family == "TOKEN_id":
         factor_value = token.value
-        print("hereeeeeeeeee:", factor_value)
         lex()
         tail = idtail()
         if tail:
@@ -693,11 +740,17 @@ def print_quads():
 def close_files():
     file.close()
 
+def create_int_code_file():
+    with open("int_code.int", "w") as f:
+        for quad in quad_list:
+            f.write(f"QUAD: {quad.id} :: {quad.operator}, {quad.operand1}, {quad.operand2}, {quad.operand3}\n")
+
 def main():
     open_cpy_file()
     parser()
     close_files()
     print_quads()
+    create_int_code_file()
 
 
 
