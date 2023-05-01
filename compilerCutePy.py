@@ -1,15 +1,9 @@
 import sys
-## GLOBAL DECLERATIONS ##
 
-# apla pragmata gia ton endiameso
-# 1. exw kanei merikes domes pou leei kai stis diafaneis px gen_quad() ktl
-# 2. exw balei ta quads gia ta start_blocks end_blocks
-# 3. ksekinisa polu ligo na blepw pou prepei na mpoun ta gen_quad gia to assignment px x=b
-#    H polu douleia prepei na ginei sto expresion me ta temp values polu stis diafaneies gia
-#    tis periptseis twn x=b+1, x=(a+x)+1 ktl
-#    Genika apo oti katalaba otan kaloume tin expression() tha prepei na pername kai mia metabliti
-#    wste otan teleiwsei na mas dwsei ton operand2.
-#    des tin grammi 399, gia na deis pws to skeftomai
+# 1. o endiamesos kodikas exei ulopoihthei kai tha ton breite sto arxeio int_code.int
+# 2. o pinakas sumbolwn den exei oloklirwthei akoma, tha einai etoimos mazi me ton teliko
+# 3. sto print tha deite apla ta basika scopes me ta entities tous.
+# 4. leipoun offset parameters ktl.
 temporary_states = {0,1,2,3,4,5,6,7,8,9,10}
 final = 99
 line = 1
@@ -139,6 +133,21 @@ class Entity():
         self.name = name
         self.entity_type = entity_type 
 
+def add_new_entity(name, class_entity):
+    if class_entity == "VAR":
+        scopes[-1].addEntity(Variable(name,"int",0))
+    if class_entity == "FUNC":
+        scopes[-1].addEntity(Function(name,"func",0,0,0))
+
+def add_new_scope():
+    if not scopes:
+        scopes.append(Scope(0))
+    else:
+        scopes.append(Scope(scopes[-1].nested_level + 1))
+
+def remove_scope():
+    scopes.pop()
+#def search_entity():
 
 def gen_quad(operator, operand1, operand2, operand3):
     global next_label
@@ -300,7 +309,7 @@ def create_token(word,line):
         token = Token(tokens_dict['number'], word, line)
     else:
         token = Token(tokens_dict['ID'], word, line)
-    print(' LINE: %d :: '  %token.line + token.family + ' :: ' + token.value)
+    #print(' LINE: %d :: '  %token.line + token.family + ' :: ' + token.value)
 
 
 def start_rule():
@@ -317,6 +326,8 @@ def def_main_function():
         lex()
         if token.family == "TOKEN_id":
             name = token.value
+            #add_new_entity(name,"FUNC")
+            add_new_scope()
             lex()
             if token.family == "TOKEN_leftParenthesis":
                 lex()
@@ -331,6 +342,8 @@ def def_main_function():
                             gen_quad("begin_block", name, "_", "_")
                             statements()
                             gen_quad("end_block", name, "_", "_")
+                            print_table()
+                            remove_scope()
                             if token.family == "TOKEN_right_hashbracket":
                                 lex()
                             else:
@@ -359,8 +372,8 @@ def declarations():
             error(token.line, "declare")
 
 def declaration_line():
-    if token.family == "TOKEN_id":
-        lex()
+    #if token.family == "TOKEN_id":
+    #    add_new_entity(token.value,"VAR")
         id_list()
 
 def def_function():
@@ -368,35 +381,35 @@ def def_function():
         lex()
         if token.family == "TOKEN_id":
             name = token.value
+            add_new_entity(name,"FUNC")
+            add_new_scope()
             lex()
             if token.family == "TOKEN_leftParenthesis":
                 lex()
-                if token.family == "TOKEN_id":
+                id_list()
+                if token.family == "TOKEN_rightParenthesis":
                     lex()
-                    id_list()
-                    if token.family == "TOKEN_rightParenthesis":
+                    if token.family == "TOKEN_colon":
                         lex()
-                        if token.family == "TOKEN_colon":
+                        if token.family == "TOKEN_left_hashbracket":
                             lex()
-                            if token.family == "TOKEN_left_hashbracket":
+                            declarations()
+                            def_function()
+                            gen_quad("begin_block", name, "_", "_")
+                            statements()
+                            gen_quad("end_block", name, "_", "_")
+                            print_table()
+                            remove_scope()
+                            if token.family == "TOKEN_right_hashbracket":
                                 lex()
-                                declarations()
-                                def_function()
-                                gen_quad("begin_block", name, "_", "_")
-                                statements()
-                                gen_quad("end_block", name, "_", "_")
-                                if token.family == "TOKEN_right_hashbracket":
-                                    lex()
-                                else:
-                                    error(token.line,"#}")
                             else:
-                                error(token.line,"#{")
+                                error(token.line,"#}")
                         else:
-                            error(token.line,":")
+                            error(token.line,"#{")
                     else:
-                        error(token.line,")")
+                        error(token.line,":")
                 else:
-                    error(token.line,"id")
+                    error(token.line,")")
             else:
                 error(token.line,"(")
         else:
@@ -518,7 +531,7 @@ def if_stat():
                     backpatch(b_true, next_quad())
                     statements()
                     skip_list = make_list(next_quad())
-                    gen_quad("jump", "_", "_", "_")
+                    gen_quad("jump", "_", "_", str(next_quad()+1))
                     backpatch(b_false, next_quad()) 
                     if token.family == "TOKEN_right_hashbracket":
                         lex()   
@@ -528,7 +541,7 @@ def if_stat():
                     backpatch(b_true, next_quad())
                     statement()
                     skip_list = make_list(next_quad())
-                    gen_quad("jump", "_", "_", "_")
+                    gen_quad("jump", "_", "_", str(next_quad()+1))
                     backpatch(b_false, next_quad())          
             else:
                 error(token.line,":")
@@ -575,7 +588,7 @@ def while_stat():
                 else:
                     backpatch(b_true, next_quad())
                     statement()
-                    gen_quad('jump','_','_',b_quad)
+                    gen_quad('jump','_','_',str(b_quad))
                     backpatch(b_false, next_quad())
             else:
                 error(token.line,":")
@@ -701,10 +714,14 @@ def actual_par_list():
 
 
 def id_list():
-    while(token.family == "TOKEN_comma"):
+    if token.family == "TOKEN_id":
+        add_new_entity(token.value,"VAR")
         lex()
-        if token.family == "TOKEN_id":
+        while(token.family == "TOKEN_comma"):
             lex()
+            if token.family == "TOKEN_id":
+                add_new_entity(token.value,"VAR")
+                lex()
 
 
 
@@ -737,6 +754,15 @@ def print_quads():
     for quad in quad_list:
         print(' QUAD: %d :: '  %quad.id + quad.operator  + ', ' + quad.operand1 + ', ' + quad.operand2 + ', ' + quad.operand3)
 
+def print_table():
+    for scope in scopes:
+        print(f"scope level: {scope.nested_level}")
+        print(f" entities:", end ='')
+        for entity in scope.entities:
+            print(f" {entity.name}, ", end = '')
+        print(" ")
+    print("=============================================")
+
 def close_files():
     file.close()
 
@@ -746,6 +772,7 @@ def create_int_code_file():
             f.write(f"QUAD: {quad.id} :: {quad.operator}, {quad.operand1}, {quad.operand2}, {quad.operand3}\n")
 
 def main():
+    print(f"############# SYMBOL TABLE #############")
     open_cpy_file()
     parser()
     close_files()
