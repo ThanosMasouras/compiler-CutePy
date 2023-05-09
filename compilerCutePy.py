@@ -105,8 +105,17 @@ class Function():
         self.name = name
         self.datatype = datatype
         self.startingQuad = startingQuad
+        self.frameLength = None
+        self.formalParameters =  list()
+
+    def set_startingQuad(self, Quad):
+        self.startingQuad = Quad
+
+    def set_frameLength(self, frameLength):
         self.frameLength = frameLength
-        self.formalParameters =  formalParameters
+
+    def add_formalParameter(self, fParameter):
+        self.formalParameters.append(fParameter)
 
 class FormalParameter():
     def __init__(self, name, datatype, mode):
@@ -124,20 +133,66 @@ class Scope():
     def __init__(self, nested_level):
         self.nested_level = nested_level
         self.entities = list()
+        self.offset = 12
 
-    def addEntity(self, entity):
+    def add_entity(self, entity):
         self.entities.append(entity)
+
+    def get_offset(self):
+        returning_offset = self.offset
+        self.offset += 4
+        return returning_offset
+
 
 class Entity():
     def __init__(self, name, entity_type):
         self.name = name
         self.entity_type = entity_type 
 
-def add_new_entity(name, class_entity):
-    if class_entity == "VAR":
-        scopes[-1].addEntity(Variable(name,"int",0))
-    if class_entity == "FUNC":
-        scopes[-1].addEntity(Function(name,"func",0,0,0))
+def add_func_formalParameter(name, func_name):
+    formal_parameter = FormalParameter(name,"int", "CV")
+    func = search_entity(func_name)
+    func.add_formalParameter(formal_parameter) 
+    #print(func.formalParameters[0].name)
+    #print(func_name)
+    #for item in func.formalParameters:
+    #    print(item.name)
+
+def add_var_entity(name):
+    offset = scopes[-1].get_offset()
+    scopes[-1].add_entity(Variable(name,"int", offset))
+
+def add_parameter_entity(name):
+    offset = scopes[-1].get_offset()
+    scopes[-1].add_entity(Parameter(name,"int","CV",offset))
+
+def add_func_entity(name):
+    scopes[-1].add_entity(Function(name,"func", 0, 0, 0))
+
+def search_entity(name):
+    if scopes == list():
+        return
+    sc = scopes[-1]
+    i = -1
+    while sc != None:
+        for entity in sc.entities:
+            if entity.name == name:
+                return entity
+        i = i - 1
+        if len(scopes) >= abs(i):
+            sc = scopes[i]
+        else:
+            return
+
+def update_func_startingQuad(name):
+    quad = next_quad()
+    func = search_entity(name)
+    func.set_startingQuad(quad)
+
+def update_func_frameLenght(name, frameLength):
+    func = search_entity(name)
+    func.set_frameLength(frameLength)
+
 
 def add_new_scope():
     if not scopes:
@@ -185,10 +240,11 @@ def new_temp(): #returns a new temporary variable as T_x where x is an integer
     tmpVar = '%_'
     tmpVar += str(x)
     x += 1
+    offset = scopes[-1].get_offset()
+    scopes[-1].add_entity(TemporaryVariable(tmpVar, "int",offset))
     tmpVarsList.append(tmpVar)
     return tmpVar
 
-#backpatch
 def open_cpy_file():
     global file
 
@@ -374,19 +430,19 @@ def declarations():
 def declaration_line():
     #if token.family == "TOKEN_id":
     #    add_new_entity(token.value,"VAR")
-        id_list()
+        id_list("declare")
 
 def def_function():
     while(token.family == "TOKEN_def"):
         lex()
         if token.family == "TOKEN_id":
             name = token.value
-            add_new_entity(name,"FUNC")
+            add_func_entity(name)
             add_new_scope()
             lex()
             if token.family == "TOKEN_leftParenthesis":
                 lex()
-                id_list()
+                id_list(name)
                 if token.family == "TOKEN_rightParenthesis":
                     lex()
                     if token.family == "TOKEN_colon":
@@ -395,9 +451,11 @@ def def_function():
                             lex()
                             declarations()
                             def_function()
+                            update_func_startingQuad(name)
                             gen_quad("begin_block", name, "_", "_")
                             statements()
                             gen_quad("end_block", name, "_", "_")
+                            update_func_frameLenght(name,scopes[-1].offset)
                             print_table()
                             remove_scope()
                             if token.family == "TOKEN_right_hashbracket":
@@ -713,14 +771,22 @@ def actual_par_list():
 
 
 
-def id_list():
+def id_list(type):
     if token.family == "TOKEN_id":
-        add_new_entity(token.value,"VAR")
+        if type == "declare":
+            add_var_entity(token.value)
+        else:
+            add_func_formalParameter(token.value,type)
+            add_parameter_entity(token.value)
         lex()
         while(token.family == "TOKEN_comma"):
             lex()
             if token.family == "TOKEN_id":
-                add_new_entity(token.value,"VAR")
+                if type == "declare":
+                    add_var_entity(token.value)
+                else:
+                    add_func_formalParameter(token.value,type)
+                    add_parameter_entity(token.value)
                 lex()
 
 
@@ -759,7 +825,10 @@ def print_table():
         print(f"scope level: {scope.nested_level}")
         print(f" entities:", end ='')
         for entity in scope.entities:
-            print(f" {entity.name}, ", end = '')
+            if isinstance(entity, Function):
+                print(f" {entity.name}/{entity.frameLength}, ", end = '')
+            else:
+                print(f" {entity.name}/{entity.offset}, ", end = '')
         print(" ")
     print("=============================================")
 
@@ -776,7 +845,7 @@ def main():
     open_cpy_file()
     parser()
     close_files()
-    print_quads()
+    #print_quads()
     create_int_code_file()
 
 
