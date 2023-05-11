@@ -143,6 +143,9 @@ class Scope():
         self.offset += 4
         return returning_offset
 
+    def get_nested_level(self):
+        return self.nested_level
+
 
 class Entity():
     def __init__(self, name, entity_type):
@@ -151,12 +154,8 @@ class Entity():
 
 def add_func_formalParameter(name, func_name):
     formal_parameter = FormalParameter(name,"int", "CV")
-    func = search_entity(func_name)
+    func, level = search_entity(func_name)
     func.add_formalParameter(formal_parameter) 
-    #print(func.formalParameters[0].name)
-    #print(func_name)
-    #for item in func.formalParameters:
-    #    print(item.name)
 
 def add_var_entity(name):
     offset = scopes[-1].get_offset()
@@ -177,7 +176,7 @@ def search_entity(name):
     while sc != None:
         for entity in sc.entities:
             if entity.name == name:
-                return entity
+                return entity, sc.get_nested_level()
         i = i - 1
         if len(scopes) >= abs(i):
             sc = scopes[i]
@@ -186,11 +185,11 @@ def search_entity(name):
 
 def update_func_startingQuad(name):
     quad = next_quad()
-    func = search_entity(name)
+    func, level = search_entity(name)
     func.set_startingQuad(quad)
 
 def update_func_frameLenght(name, frameLength):
-    func = search_entity(name)
+    func, level = search_entity(name)
     func.set_frameLength(frameLength)
 
 
@@ -202,7 +201,6 @@ def add_new_scope():
 
 def remove_scope():
     scopes.pop()
-#def search_entity():
 
 def gen_quad(operator, operand1, operand2, operand3):
     global next_label
@@ -257,6 +255,112 @@ def open_cpy_file():
         
     file = open(sys.argv[1], "r")
 
+def open_asm_file():
+    global file_asm
+    file_asm = open("final_code.asm", "w")
+
+def gen_asm_code(id):
+    for quad in quad_list[id:]:
+        quad_to_asm(quad)
+
+def quad_to_asm(quad):
+    file_asm.write(f"Label_{quad.id}:\n")
+    if quad.operator == 'jump':
+        file_asm.write(f"b Label_{quad.operand3}\n")
+    elif quad.operator == '=':
+        loadvr(quad.operand1,'1')
+        storerv('1', quad.operand3)
+    elif quad.operator == '==':
+        loadvr(quad.operand1,'1')
+        loadvr(quad.operand2,'2')
+        file_asm.write(f"beq $t1, $t2, Label_{quad.operand3}\n")
+    elif quad.operator == '>=':
+        loadvr(quad.operand1,'1')
+        loadvr(quad.operand2,'2')
+        file_asm.write(f"bge $t1, $t2, Label_{quad.operand3}\n")
+    elif quad.operator == '<=':
+        loadvr(quad.operand1,'1')
+        loadvr(quad.operand2,'2')
+        file_asm.write(f"ble $t1, $t2, Label_{quad.operand3}\n")
+    elif quad.operator == '!=':
+        loadvr(quad.operand1,'1')
+        loadvr(quad.operand2,'2')
+        file_asm.write(f"bne $t1, $t2, Label_{quad.operand3}\n")
+    elif quad.operator == '>':
+        loadvr(quad.operand1,'1')
+        loadvr(quad.operand2,'2')
+        file_asm.write(f"bgt $t1, $t2, Label_{quad.operand3}\n")
+    elif quad.operator == '<':
+        loadvr(quad.operand1,'1')
+        loadvr(quad.operand2,'2')
+        file_asm.write(f"blt $t1, $t2, Label_{quad.operand3}\n")
+    elif quad.operator == '+':
+        loadvr(quad.operand1,'1')
+        loadvr(quad.operand2,'2')
+        file_asm.write(f"add $t1, $t1, $t2\n")
+        storerv('1',quad.operand3)
+    elif quad.operator == '-':
+        loadvr(quad.operand1,'1')
+        loadvr(quad.operand2,'2')
+        file_asm.write(f"sub $t1, $t1, $t2\n")
+        storerv('1',quad.operand3)
+    elif quad.operator == '/':
+        loadvr(quad.operand1,'1')
+        loadvr(quad.operand2,'2')
+        file_asm.write(f"div $t1, $t1, $t2\n")
+        storerv('1',quad.operand3)
+    elif quad.operator == '*':
+        loadvr(quad.operand1,'1')
+        loadvr(quad.operand2,'2')
+        file_asm.write(f"mul $t1, $t1, $t2\n")
+        storerv('1',quad.operand3)
+
+def loadvr(v,r):
+    if str(v).isdigit():
+        file_asm.write(f"li $t{r}\n")
+    else:
+        entity, entity_level = search_entity(v)
+        current_level = scopes[-1].nested_level
+        
+        if isinstance(entity, Variable) and entity_level == current_level:
+            file_asm.write(f"lw $t{r} -{entity.offset}($sp)\n")
+        elif isinstance(entity, TemporaryVariable) and entity_level == current_level:
+            file_asm.write(f"lw $t{r} -{entity.offset}($sp)\n")
+        elif isinstance(entity, Parameter) and entity_level == current_level:
+            file_asm.write(f"lw $t{r} -{entity.offset}($sp)\n")
+        elif isinstance(entity, Variable) and entity_level < current_level:
+            gnvlcode(v)
+            file_asm.write(f'lw $t{r}, 0($t0)\n')
+        elif isinstance(entity, Parameter) and entity_level < current_level:
+            gnvlcode(v)
+            file_asm.write(f'lw $t{r}, 0($t0)\n')
+
+def storerv(r,v):
+    entity, entity_level = search_entity(v)
+    current_level = scopes[-1].nested_level
+
+    if isinstance(entity, Variable) and entity_level == current_level:
+        file_asm.write(f"sw $t{r} -{entity.offset}($sp)\n")
+    elif isinstance(entity, TemporaryVariable) and entity_level == current_level:
+        file_asm.write(f"sw $t{r} -{entity.offset}($sp)\n")
+    elif isinstance(entity, Parameter) and entity_level == current_level:
+        file_asm.write(f"sw $t{r} -{entity.offset}($sp)\n")
+    elif isinstance(entity, Variable) and entity_level < current_level:
+        gnvlcode(v)
+        file_asm.write(f'sw $t{r}, 0($t0)\n')
+    elif isinstance(entity, Parameter) and entity_level < current_level:
+        gnvlcode(v)
+        file_asm.write(f'sw $t{r}, 0($t0)\n')
+
+def gnvlcode(v):
+    entity, entity_level = search_entity(v)
+    current_level = scopes[-1].nested_level
+
+    file_asm.write(f"lw $t0,-4($sp)\n")
+    level_difference = current_level - entity_level - 1
+    for i in range(level_difference):
+        file_asm.write('lw $t0, -4($t0)\n')
+    file_asm.write(f"addi $t0, $t0, -{entity.offset}\n")
 
 def error(line, missing_token):
     print(f"Error: line {line} - {missing_token} is missing")
@@ -396,9 +500,11 @@ def def_main_function():
                             declarations()
                             def_function()
                             gen_quad("begin_block", name, "_", "_")
+                            start_quad_id2 = quad_list[-1].id
                             statements()
                             gen_quad("end_block", name, "_", "_")
-                            print_table()
+                            #print_table()
+                            gen_asm_code(start_quad_id2)
                             remove_scope()
                             if token.family == "TOKEN_right_hashbracket":
                                 lex()
@@ -453,10 +559,12 @@ def def_function():
                             def_function()
                             update_func_startingQuad(name)
                             gen_quad("begin_block", name, "_", "_")
+                            start_quad_id = quad_list[-1].id
                             statements()
                             gen_quad("end_block", name, "_", "_")
                             update_func_frameLenght(name,scopes[-1].offset)
-                            print_table()
+                            #print_table()
+                            gen_asm_code(start_quad_id)
                             remove_scope()
                             if token.family == "TOKEN_right_hashbracket":
                                 lex()
@@ -843,6 +951,7 @@ def create_int_code_file():
 def main():
     print(f"############# SYMBOL TABLE #############")
     open_cpy_file()
+    open_asm_file()
     parser()
     close_files()
     #print_quads()
