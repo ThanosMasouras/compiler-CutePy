@@ -327,6 +327,15 @@ def quad_to_asm(quad):
         loadvr(quad.operand2,'2')
         file_asm.write(f"mul t1, t1, t2\n")
         storerv('1',quad.operand3)
+    elif quad.operator == 'begin_block':
+        file_asm.write(f"sw ra, 0(sp)\n")
+    elif quad.operator == 'end_block':
+        file_asm.write(f"lw ra, 0(sp)\n")
+        file_asm.write(f"jr ra\n")
+    elif quad.operator == 'halt':
+        file_asm.write(f"li a0, 0\n")
+        file_asm.write(f"li a7, 93\n")
+        file_asm.write(f"ecall \n")
 
 def loadvr(v,r):
     if str(v).isdigit():
@@ -492,7 +501,6 @@ def start_rule():
 def def_main_part():
     while( token.family == "TOKEN_def"):
         def_main_function()
-    #gen_quad("halt", "_", "_", "_")
 
 def def_main_function():
     if token.family == "TOKEN_def":
@@ -922,11 +930,15 @@ def call_main_part():
                 lex()
                 if token.value == '”__main__”':
                     lex()
+                    gen_quad("begin_block", "main", "_", "_")
                     if token.family == 'TOKEN_colon':
                         lex()
                         while(token.family == "TOKEN_id"):
                             main_function_call()
-                            #gen_quad("call", token.value, "_", "_")
+                            if token.family != "TOKEN_eof":
+                                gen_quad("call", token.value, "_", "_")
+                        gen_quad("halt", "_", "_", "_")
+                        gen_quad("end_block", "main", "_", "_")
 
 
 def main_function_call():
@@ -943,6 +955,7 @@ def print_quads():
         print(' QUAD: %d :: '  %quad.id + quad.operator  + ', ' + quad.operand1 + ', ' + quad.operand2 + ', ' + quad.operand3)
 
 def print_table():
+    print(f"############# SYMBOL TABLE #############")
     for scope in scopes:
         print(f"scope level: {scope.nested_level}")
         print(f" entities:", end ='')
@@ -963,7 +976,6 @@ def create_int_code_file():
             f.write(f"QUAD: {quad.id} :: {quad.operator}, {quad.operand1}, {quad.operand2}, {quad.operand3}\n")
 
 def main():
-    print(f"############# SYMBOL TABLE #############")
     open_cpy_file()
     open_asm_file()
     parser()
