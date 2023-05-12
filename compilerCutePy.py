@@ -270,97 +270,110 @@ def quad_to_asm(quad):
     elif quad.operator == '=':
         loadvr(quad.operand1,'1')
         storerv('1', quad.operand3)
+    elif quad.operator == 'in':
+        file_asm.write(f"li a7, 5\n")
+        file_asm.write(f"ecall\n")
+        loadvr(quad.operand1, '1')
+        file_asm.write(f"mv t1, a0\n")
+    elif quad.operator == 'out':
+        loadvr(quad.operand1, '1')
+        file_asm.write(f"li a0,t1\n")
+        file_asm.write(f"li a7,1\n")
+    elif quad.operator == 'ret':
+        loadvr(quad.operand3, '1')
+        file_asm.write("lw t0, -8(sp)\n")
+        file_asm.write("sw t1, 0(t0)\n")
     elif quad.operator == '==':
         loadvr(quad.operand1,'1')
         loadvr(quad.operand2,'2')
-        file_asm.write(f"beq $t1, $t2, Label_{quad.operand3}\n")
+        file_asm.write(f"beq t1, t2, Label_{quad.operand3}\n")
     elif quad.operator == '>=':
         loadvr(quad.operand1,'1')
         loadvr(quad.operand2,'2')
-        file_asm.write(f"bge $t1, $t2, Label_{quad.operand3}\n")
+        file_asm.write(f"bge t1, t2, Label_{quad.operand3}\n")
     elif quad.operator == '<=':
         loadvr(quad.operand1,'1')
         loadvr(quad.operand2,'2')
-        file_asm.write(f"ble $t1, $t2, Label_{quad.operand3}\n")
+        file_asm.write(f"ble t1, t2, Label_{quad.operand3}\n")
     elif quad.operator == '!=':
         loadvr(quad.operand1,'1')
         loadvr(quad.operand2,'2')
-        file_asm.write(f"bne $t1, $t2, Label_{quad.operand3}\n")
+        file_asm.write(f"bne t1, t2, Label_{quad.operand3}\n")
     elif quad.operator == '>':
         loadvr(quad.operand1,'1')
         loadvr(quad.operand2,'2')
-        file_asm.write(f"bgt $t1, $t2, Label_{quad.operand3}\n")
+        file_asm.write(f"bgt t1, t2, Label_{quad.operand3}\n")
     elif quad.operator == '<':
         loadvr(quad.operand1,'1')
         loadvr(quad.operand2,'2')
-        file_asm.write(f"blt $t1, $t2, Label_{quad.operand3}\n")
+        file_asm.write(f"blt t1, t2, Label_{quad.operand3}\n")
     elif quad.operator == '+':
         loadvr(quad.operand1,'1')
         loadvr(quad.operand2,'2')
-        file_asm.write(f"add $t1, $t1, $t2\n")
+        file_asm.write(f"add t1, t1, t2\n")
         storerv('1',quad.operand3)
     elif quad.operator == '-':
         loadvr(quad.operand1,'1')
         loadvr(quad.operand2,'2')
-        file_asm.write(f"sub $t1, $t1, $t2\n")
+        file_asm.write(f"sub t1, t1, t2\n")
         storerv('1',quad.operand3)
     elif quad.operator == '/':
         loadvr(quad.operand1,'1')
         loadvr(quad.operand2,'2')
-        file_asm.write(f"div $t1, $t1, $t2\n")
+        file_asm.write(f"div t1, t1, t2\n")
         storerv('1',quad.operand3)
     elif quad.operator == '*':
         loadvr(quad.operand1,'1')
         loadvr(quad.operand2,'2')
-        file_asm.write(f"mul $t1, $t1, $t2\n")
+        file_asm.write(f"mul t1, t1, t2\n")
         storerv('1',quad.operand3)
 
 def loadvr(v,r):
     if str(v).isdigit():
-        file_asm.write(f"li $t{r}\n")
+        file_asm.write(f"li t{r}\n")
     else:
         entity, entity_level = search_entity(v)
         current_level = scopes[-1].nested_level
         
         if isinstance(entity, Variable) and entity_level == current_level:
-            file_asm.write(f"lw $t{r} -{entity.offset}($sp)\n")
+            file_asm.write(f"lw t{r} -{entity.offset}(sp)\n")
         elif isinstance(entity, TemporaryVariable) and entity_level == current_level:
-            file_asm.write(f"lw $t{r} -{entity.offset}($sp)\n")
+            file_asm.write(f"lw t{r} -{entity.offset}(sp)\n")
         elif isinstance(entity, Parameter) and entity_level == current_level:
-            file_asm.write(f"lw $t{r} -{entity.offset}($sp)\n")
+            file_asm.write(f"lw t{r} -{entity.offset}(sp)\n")
         elif isinstance(entity, Variable) and entity_level < current_level:
             gnvlcode(v)
-            file_asm.write(f'lw $t{r}, 0($t0)\n')
+            file_asm.write(f'lw t{r}, 0(t0)\n')
         elif isinstance(entity, Parameter) and entity_level < current_level:
             gnvlcode(v)
-            file_asm.write(f'lw $t{r}, 0($t0)\n')
+            file_asm.write(f'lw t{r}, 0(t0)\n')
 
 def storerv(r,v):
     entity, entity_level = search_entity(v)
     current_level = scopes[-1].nested_level
 
     if isinstance(entity, Variable) and entity_level == current_level:
-        file_asm.write(f"sw $t{r} -{entity.offset}($sp)\n")
+        file_asm.write(f"sw t{r} -{entity.offset}(sp)\n")
     elif isinstance(entity, TemporaryVariable) and entity_level == current_level:
-        file_asm.write(f"sw $t{r} -{entity.offset}($sp)\n")
+        file_asm.write(f"sw t{r} -{entity.offset}(sp)\n")
     elif isinstance(entity, Parameter) and entity_level == current_level:
-        file_asm.write(f"sw $t{r} -{entity.offset}($sp)\n")
+        file_asm.write(f"sw t{r} -{entity.offset}(sp)\n")
     elif isinstance(entity, Variable) and entity_level < current_level:
         gnvlcode(v)
-        file_asm.write(f'sw $t{r}, 0($t0)\n')
+        file_asm.write(f'sw t{r}, 0(t0)\n')
     elif isinstance(entity, Parameter) and entity_level < current_level:
         gnvlcode(v)
-        file_asm.write(f'sw $t{r}, 0($t0)\n')
+        file_asm.write(f'sw t{r}, 0(t0)\n')
 
 def gnvlcode(v):
     entity, entity_level = search_entity(v)
     current_level = scopes[-1].nested_level
 
-    file_asm.write(f"lw $t0,-4($sp)\n")
+    file_asm.write(f"lw t0,-4(sp)\n")
     level_difference = current_level - entity_level - 1
     for i in range(level_difference):
-        file_asm.write('lw $t0, -4($t0)\n')
-    file_asm.write(f"addi $t0, $t0, -{entity.offset}\n")
+        file_asm.write('lw t0, -4(t0)\n')
+    file_asm.write(f"addi t0, t0, -{entity.offset}\n")
 
 def error(line, missing_token):
     print(f"Error: line {line} - {missing_token} is missing")
@@ -479,7 +492,7 @@ def start_rule():
 def def_main_part():
     while( token.family == "TOKEN_def"):
         def_main_function()
-    
+    #gen_quad("halt", "_", "_", "_")
 
 def def_main_function():
     if token.family == "TOKEN_def":
@@ -913,6 +926,7 @@ def call_main_part():
                         lex()
                         while(token.family == "TOKEN_id"):
                             main_function_call()
+                            #gen_quad("call", token.value, "_", "_")
 
 
 def main_function_call():
