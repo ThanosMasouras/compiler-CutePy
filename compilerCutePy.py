@@ -266,6 +266,10 @@ def gen_asm_code(id):
 
 def quad_to_asm(quad):
     global number_of_parameters
+    if quad.id == 0:
+        file_asm.write(f".data\n")
+        file_asm.write(f"str_nl: .asciz '\\n' \n")
+        file_asm.write(f".text\n")
     file_asm.write(f"Label_{quad.id}:\n")
     if quad.operator == 'jump':
         file_asm.write(f"b Label_{quad.operand3}\n")
@@ -538,7 +542,7 @@ def create_token(word,line):
         token = Token(tokens_dict['ID'], word, line)
         check_id(word, line)
 
-    print(' LINE: %d :: '  %token.line + token.family + ' :: ' + token.value)
+    #print(' LINE: %d :: '  %token.line + token.family + ' :: ' + token.value)
 
 
 def check_id(word, line):
@@ -688,8 +692,6 @@ def structured_statement():
     elif token.family == 'TOKEN_while':
         while_stat()
 
-
-
 def assignment_stat(operand3):
     lex()
     if token.family == "TOKEN_assignment":
@@ -730,7 +732,7 @@ def assignment_stat(operand3):
                 error(token.line,";")
         else:
             print(f"Error: line {line} - id or number is expected")
-            sys.exit(1)
+            sys.exit()
 
 
 def print_stat():
@@ -763,7 +765,7 @@ def return_stat():
                 else:
                     error(token.line,";")
             else:
-                error(token.line,"dd)")
+                error(token.line,")")
         else:
             error(token.line,"(")
     
@@ -815,6 +817,8 @@ def if_stat():
                     backpatch(skip_list, next_quad())
             else:
                 error(token.line,":")
+    else:
+        error(token.line,"(")
 
 def while_stat():
     lex()
@@ -877,11 +881,17 @@ def bool_factor():
             retval = condition()
             if token.family == 'TOKEN_rightBracket':
                 lex()
+            else:
+                error(token.line,"}")
+        else:
+            error(token.line,"{")
     elif token.family == 'TOKEN_leftBracket':
             lex()
             retval = condition()
             if token.family == 'TOKEN_rightBracket':
                 lex()
+            else:
+                error(token.line,"}")
     else:
         exp1 = expression()
         if token.value in ['==','<','>','!=','<=','>=']:
@@ -913,7 +923,7 @@ def expression():
             term1 = temp_var
         else:
             print(f"Error: line {line} - id or number is expected")
-            sys.exit(1)
+            sys.exit()
 
     return term1
 
@@ -935,7 +945,7 @@ def term():
             factor1 = temp_var
         else:
             print(f"Error: line {line} - id or number is expected")
-            sys.exit(1)
+            sys.exit()
 
     return factor1
 
@@ -949,6 +959,8 @@ def factor():
         factor_value = expression()
         if token.family == "TOKEN_rightParenthesis":
             lex()
+        else:
+            error(token.line,")")
     elif token.family == "TOKEN_id":
         factor_value = token.value
         lex()
@@ -996,6 +1008,8 @@ def id_list(type):
                     add_func_formalParameter(token.value,type)
                     add_parameter_entity(token.value)
                 lex()
+            else:
+                error(token.line,"id")
 
 
 
@@ -1018,6 +1032,15 @@ def call_main_part():
                                 gen_quad("call", token.value, "_", "_")
                         gen_quad("halt", "_", "_", "_")
                         gen_quad("end_block", "main", "_", "_")
+                    else:
+                        error(token.line,":")
+                else:
+                    error(token.line,"'”__main__”")
+            else:
+                error(token.line,"==")
+        else:
+            error(token.line,"__name__")
+
 
 
 def main_function_call():
@@ -1028,6 +1051,12 @@ def main_function_call():
             lex()
             if token.family == "TOKEN_semiColon":
                 lex()
+            else:
+                error(token.line,";")
+        else:
+            error(token.line,")")
+    else:
+        error(token.line,"(")
 
 def print_quads():
     for quad in quad_list:
