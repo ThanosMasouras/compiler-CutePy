@@ -281,6 +281,9 @@ def check_id(word, line):
 		sys.exit()
 
 
+def error(line, missing_token):
+	print(f"Error: line {line} - {missing_token} is missing")
+	exit()
 
 
 '''
@@ -1150,27 +1153,6 @@ def save_int_code_to_file():
 		for quad in quad_list:
 			f.write(f"QUAD: {quad.id} :: {quad.operator}, {quad.operand1}, {quad.operand2}, {quad.operand3}\n")
 
-def close_files():
-	file.close()
-	file_asm.close()
-
-'''
-
-Prints
-
-
-'''
-
-def error(line, missing_token):
-	print(f"Error: line {line} - {missing_token} is missing")
-	exit()
-
-
-def print_quads():
-	for quad in quad_list:
-		print(' QUAD: %d :: '  %quad.id + quad.operator  + ', ' + quad.operand1 + ', ' + quad.operand2 + ', ' + quad.operand3)
-
-
 def save_symbol_table_to_file():
 	with open("symbol_table.txt", "a") as f:
 		f.write(f"############# SYMBOL TABLE #############\n")
@@ -1184,6 +1166,10 @@ def save_symbol_table_to_file():
 					f.write(f" {entity.name}/{entity.offset}, ")
 			f.write(f"\n")
 		f.write("=============================================\n")
+
+def close_files():
+	file.close()
+	file_asm.close()
 
 
 '''
