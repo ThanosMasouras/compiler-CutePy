@@ -148,10 +148,10 @@ class Scope():
         return self.nested_level
 
 
-class Entity():
-    def __init__(self, name, entity_type):
-        self.name = name
-        self.entity_type = entity_type 
+#class Entity():
+#    def __init__(self, name, entity_type):
+#        self.name = name
+#        self.entity_type = entity_type 
 
 def add_func_formalParameter(name, func_name):
     formal_parameter = FormalParameter(name,"int", "CV")
@@ -591,7 +591,7 @@ def def_main_function():
                             start_quad_id2 = quad_list[-1].id
                             statements()
                             gen_quad("end_block", name, "_", "_")
-                            #print_table()
+                            print_table()
                             gen_asm_code(start_quad_id2)
                             remove_scope()
                             if token.family == "TOKEN_right_hashbracket":
@@ -649,7 +649,7 @@ def def_function():
                             statements()
                             gen_quad("end_block", name, "_", "_")
                             update_func_frameLenght(name,scopes[-1].offset)
-                            #print_table()
+                            print_table()
                             gen_asm_code(start_quad_id)
                             remove_scope()
                             if token.family == "TOKEN_right_hashbracket":
