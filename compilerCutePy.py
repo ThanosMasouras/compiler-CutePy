@@ -1,14 +1,14 @@
 import sys
 
-# 1. o endiamesos kodikas exei ulopoihthei kai tha ton breite sto arxeio int_code.int
-# 2. o pinakas sumbolwn den exei oloklirwthei akoma, tha einai etoimos mazi me ton teliko
-# 3. sto print tha deite apla ta basika scopes me ta entities tous.
-# 4. leipoun offset parameters ktl.
+#optional +
+#-min +max for int
+#arnitiko t
 temporary_states = {0,1,2,3,4,5,6,7,8,9,10}
 final = 99
 line = 1
 skip_char = 0
 next_label = 0
+number_of_parameters = 0
 quad_list = []
 tmpVarsList = []
 x = 0
@@ -264,6 +264,7 @@ def gen_asm_code(id):
         quad_to_asm(quad)
 
 def quad_to_asm(quad):
+    global number_of_parameters
     file_asm.write(f"Label_{quad.id}:\n")
     if quad.operator == 'jump':
         file_asm.write(f"b Label_{quad.operand3}\n")
@@ -336,6 +337,49 @@ def quad_to_asm(quad):
         file_asm.write(f"li a0, 0\n")
         file_asm.write(f"li a7, 93\n")
         file_asm.write(f"ecall \n")
+    elif quad.operator == 'call':
+        number_of_parameters = 0
+        called_function, called_level = search_entity(quad.operand1)
+        block_function = get_block_function_name()
+        if block_function.startswith("main_"):
+            calling_level = 0
+            calling_framelength = scopes[-1].offset
+        else:
+            calling_function, calling_level = search_entity(block_function)
+            calling_framelength = calling_function.frameLength
+
+        if calling_level == called_level:
+            file_asm.write(f"lw t0, -4(sp)\n")
+            file_asm.write(f"sw t0, -4(sp)\n")
+        else:
+            file_asm.write(f"sw sp, -4(fp)\n")
+
+        file_asm.write(f"addi sp, sp, {calling_framelength}\n")
+        file_asm.write(f"jal {called_function.startingQuad}\n")
+        file_asm.write(f"addi sp, sp, -{calling_framelength}\n")
+    elif quad.operator == 'par':
+        if quad.operand2 == 'ret':
+            entity, entity_level = search_entity(quad.operand1)
+            file_asm.write(f"addi t0, sp, -{entity.offset}\n")
+            file_asm.write(f"sw t0, -8(fp)\n")
+        elif quad.operand2 == 'cv':
+            block_function = get_block_function_name()
+            if block_function.startswith("main_"):
+                calling_framelength = scopes[-1].offset
+            else:
+                calling_function, calling_level = search_entity(block_function)
+                calling_framelength = calling_function.frameLength
+            if number_of_parameters == 0:
+                file_asm.write(f" addi fp, sp, {calling_framelength}\n")
+            number_of_parameters += 1
+            loadvr(quad.operand1, '0')
+            file_asm.write(f"sw t0, -{12+4*number_of_parameters}(fp)\n")
+
+
+def get_block_function_name():
+    for i in reversed(quad_list):
+        if i.operator == 'begin_block':
+            return i.operand1
 
 def loadvr(v,r):
     if str(v).isdigit():
@@ -524,7 +568,7 @@ def def_main_function():
                             start_quad_id2 = quad_list[-1].id
                             statements()
                             gen_quad("end_block", name, "_", "_")
-                            #print_table()
+                            print_table()
                             gen_asm_code(start_quad_id2)
                             remove_scope()
                             if token.family == "TOKEN_right_hashbracket":
@@ -584,7 +628,7 @@ def def_function():
                             statements()
                             gen_quad("end_block", name, "_", "_")
                             update_func_frameLenght(name,scopes[-1].offset)
-                            #print_table()
+                            print_table()
                             gen_asm_code(start_quad_id)
                             remove_scope()
                             if token.family == "TOKEN_right_hashbracket":
