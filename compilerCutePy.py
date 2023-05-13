@@ -1,8 +1,7 @@
 import sys
 
-#optional +
+
 #-min +max for int
-#arnitiko t
 temporary_states = {0,1,2,3,4,5,6,7,8,9,10}
 final = 99
 line = 1
@@ -67,7 +66,9 @@ tokens_dict = {
     '#$' : 'TOKEN_comment',
     '#{' : 'TOKEN_left_hashbracket',
     '#}' : 'TOKEN_right_hashbracket',
-    '#' : 'TOKEN_hashtag'
+    '#' : 'TOKEN_hashtag',
+    '__name__': 'TOKEN_main_name',
+    '”__main__”': 'TOKEN_main'
 }
 
 class Token():
@@ -232,7 +233,7 @@ def backpatch(list, label):
         if quad.id in list:
             quad.operand3 = str(label)
 
-def new_temp(): #returns a new temporary variable as T_x where x is an integer
+def new_temp():
     global tmpVarsList
     global x
     tmpVar = '%_'
@@ -535,8 +536,26 @@ def create_token(word,line):
         token = Token(tokens_dict['number'], word, line)
     else:
         token = Token(tokens_dict['ID'], word, line)
-    #print(' LINE: %d :: '  %token.line + token.family + ' :: ' + token.value)
+        check_id(word, line)
 
+    print(' LINE: %d :: '  %token.line + token.family + ' :: ' + token.value)
+
+
+def check_id(word, line):
+    allowed_chars = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_')
+    if word in reserved_words_list:
+        print(f"Error: line {line} - reserved words cant be used as id")
+    if len(word) > 30:
+        print(f"Error: line {line} - id {word} is too long (max length is 30)")
+        sys.exit()
+    elif not word.isidentifier():
+        print(f"Error: line {line} - id {word} contains characters other than letters, numbers, and '_', or starts with a number")
+        sys.exit()
+    elif set(word).issubset(allowed_chars):
+        return None
+    else:
+        print(f"Error: line {line} - id {word} contains characters other than letters, numbers, and '_'")
+        sys.exit()
 
 def start_rule():
     def_main_part()
@@ -568,7 +587,7 @@ def def_main_function():
                             start_quad_id2 = quad_list[-1].id
                             statements()
                             gen_quad("end_block", name, "_", "_")
-                            print_table()
+                            #print_table()
                             gen_asm_code(start_quad_id2)
                             remove_scope()
                             if token.family == "TOKEN_right_hashbracket":
@@ -599,8 +618,6 @@ def declarations():
             error(token.line, "declare")
 
 def declaration_line():
-    #if token.family == "TOKEN_id":
-    #    add_new_entity(token.value,"VAR")
         id_list("declare")
 
 def def_function():
@@ -628,7 +645,7 @@ def def_function():
                             statements()
                             gen_quad("end_block", name, "_", "_")
                             update_func_frameLenght(name,scopes[-1].offset)
-                            print_table()
+                            #print_table()
                             gen_asm_code(start_quad_id)
                             remove_scope()
                             if token.family == "TOKEN_right_hashbracket":
@@ -704,13 +721,16 @@ def assignment_stat(operand3):
                     error(token.line,"iput")
             else:
                 error(token.line,"(")
-        else:
+        elif token.value not in ('*', '/'):
             operand1 = expression()
             gen_quad("=", operand1,"_", operand3)
             if token.family == "TOKEN_semiColon":
                 lex()
             else:
                 error(token.line,";")
+        else:
+            print(f"Error: line {line} - id or number is expected")
+            sys.exit(1)
 
 
 def print_stat():
@@ -877,31 +897,46 @@ def bool_factor():
 
 
 def expression():
-    optional_sign()
+    op_sign = optional_sign()
     term1 = term()
+    if op_sign != None:
+        temp_sign = new_temp()
+        gen_quad(op_sign, 0, term1, temp_sign)
+        term1 = temp_sign
     while(token.value == "+" or token.value == "-"):
         op = token.value
         lex()
-        term2 = term()
-        temp_var = new_temp()
-        gen_quad(op, term1, term2, temp_var)
-        term1 = temp_var
+        if token.value not in ("+", "-", "*", "/"):
+            term2 = term()
+            temp_var = new_temp()
+            gen_quad(op, term1, term2, temp_var)
+            term1 = temp_var
+        else:
+            print(f"Error: line {line} - id or number is expected")
+            sys.exit(1)
 
     return term1
 
 def optional_sign():
     if token.value == "+" or token.value == "-":
+        sign = token.value
         lex()
+        return sign
 
 def term():
     factor1 = factor()
     while(token.value == "*" or token.value == '//'):
         op = token.value
         lex()
-        factor2 = factor()
-        temp_var = new_temp()
-        gen_quad(op, factor1, factor2, temp_var)
-        factor1 = temp_var
+        if token.value not in ("+", "-", "*", "/"):
+            factor2 = factor()
+            temp_var = new_temp()
+            gen_quad(op, factor1, factor2, temp_var)
+            factor1 = temp_var
+        else:
+            print(f"Error: line {line} - id or number is expected")
+            sys.exit(1)
+
     return factor1
 
 def factor():
@@ -968,11 +1003,11 @@ def id_list(type):
 def call_main_part():
     if token.family == "TOKEN_if":
         lex()
-        if token.value == '__name__':
+        if token.family == "TOKEN_main_name":
             lex()
             if token.family == "TOKEN_equal":
                 lex()
-                if token.value == '”__main__”':
+                if token.family == "TOKEN_main":
                     lex()
                     gen_quad("begin_block", "main", "_", "_")
                     if token.family == 'TOKEN_colon':
