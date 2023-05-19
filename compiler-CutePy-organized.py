@@ -1,5 +1,5 @@
 import sys
-
+import trace
 
 x = 0
 skip_char = 0
@@ -1148,10 +1148,12 @@ def save_lex_tokens_to_file():
 		for token in tokens_list:
 			f.write(f" LINE: {token.line} :: {token.family} ::  {token.value} \n")
 
+
 def save_int_code_to_file():
 	with open("int_code.int", "w") as f:
 		for quad in quad_list:
 			f.write(f"QUAD: {quad.id} :: {quad.operator}, {quad.operand1}, {quad.operand2}, {quad.operand3}\n")
+
 
 def save_symbol_table_to_file():
 	with open("symbol_table.txt", "a") as f:
@@ -1167,9 +1169,7 @@ def save_symbol_table_to_file():
 			f.write(f"\n")
 		f.write("=============================================\n")
 
-def close_files():
-	file.close()
-	file_asm.close()
+
 
 
 '''
@@ -1186,8 +1186,11 @@ def main():
 	parser()
 	save_lex_tokens_to_file()
 	save_int_code_to_file()
-	close_files()
+
+
 
 
 
 main()
+
+
