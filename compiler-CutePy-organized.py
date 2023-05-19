@@ -1,5 +1,5 @@
 import sys
-import trace
+
 
 x = 0
 skip_char = 0
